@@ -1,0 +1,343 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชำระเงิน - น้ำตกห้วยน้ำเย็น</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --dark-green:#0A4B33; --mint-green:#67A792; --gold:#cc8e35; --bg:#F0EBE0; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Prompt',sans-serif; background:var(--bg); min-height:100vh; }
+
+        .page-header {
+            position:relative; height:200px; overflow:hidden;
+            display:flex; align-items:flex-end; padding:0 20px 28px;
+        }
+        .page-header-bg {
+            position:absolute; inset:0;
+            background-image:url('195737.jpg');
+            background-size:cover; background-position:center 40%; z-index:0;
+        }
+        .page-header-overlay {
+            position:absolute; inset:0;
+            background:linear-gradient(to bottom,rgba(10,75,51,0.4) 0%,rgba(5,30,18,0.88) 100%);
+            z-index:1;
+        }
+        .page-header-content { position:relative; z-index:2; color:white; max-width:520px; width:100%; margin:0 auto; }
+        .back-link {
+            display:inline-flex; align-items:center; gap:6px;
+            color:rgba(255,255,255,0.75); text-decoration:none;
+            font-size:0.82em; margin-bottom:10px; transition:color 0.2s;
+        }
+        .back-link:hover { color:white; }
+        .badge { font-family:'Kanit'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase; color:var(--mint-green); margin-bottom:4px; }
+        .page-header-content h1 { font-family:'Kanit'; font-size:1.8rem; font-weight:700; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
+
+        .content-wrap { max-width:520px; margin:0 auto; padding:20px 20px 40px; }
+
+        .card { background:white; border-radius:16px; box-shadow:0 4px 20px rgba(10,75,51,0.08); padding:22px 20px; margin-bottom:14px; }
+        .card-title { font-family:'Kanit'; color:var(--dark-green); font-size:1rem; font-weight:700; margin-bottom:14px; }
+
+        /* Amount banner */
+        .amount-banner {
+            background:linear-gradient(135deg,var(--dark-green),#0d6644);
+            border-radius:16px; padding:20px 24px; text-align:center;
+            color:white; margin-bottom:14px;
+        }
+        .amount-label { font-size:0.82em; opacity:0.8; margin-bottom:4px; }
+        .amount-value { font-family:'Kanit'; font-size:2.2rem; font-weight:700; letter-spacing:1px; }
+        .amount-unit { font-size:1rem; font-weight:500; }
+        .booking-ref { font-size:0.8em; opacity:0.75; margin-top:6px; letter-spacing:1px; }
+
+        /* Bank info */
+        .bank-box {
+            background:#f7fbf9; border:1.5px solid rgba(103,167,146,0.35);
+            border-radius:12px; padding:18px 20px;
+        }
+        .bank-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #e8f5ef; font-size:0.9em; }
+        .bank-row:last-child { border-bottom:none; }
+        .bank-label { color:#888; font-size:0.82em; }
+        .bank-value { font-weight:600; color:#1a1a1a; }
+        .bank-number { font-family:'Kanit'; font-size:1.15em; color:var(--dark-green); letter-spacing:1px; }
+        .bank-note { font-size:0.78em; color:#888; margin-top:10px; text-align:center; line-height:1.5; }
+
+        /* Info rows */
+        .info-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #f0f0f0; font-size:0.86em; }
+        .info-row:last-child { border-bottom:none; }
+        .info-row .key { color:#888; }
+        .info-row .val { font-weight:600; color:#333; text-align:right; max-width:60%; }
+
+        /* Upload */
+        .upload-area {
+            border:2px dashed rgba(103,167,146,0.5); border-radius:12px;
+            padding:24px 16px; text-align:center; cursor:pointer;
+            transition:all 0.2s; background:#f9fcfb; position:relative;
+        }
+        .upload-area:hover { border-color:var(--mint-green); background:#f0f8f5; }
+        .upload-area.has-file { border-color:var(--dark-green); background:#f0f8f5; }
+        .upload-area input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+        .upload-icon { font-size:2rem; margin-bottom:8px; }
+        .upload-label { font-size:0.88em; color:#555; }
+        .upload-label strong { color:var(--dark-green); }
+        .upload-preview { margin-top:12px; display:none; }
+        .upload-preview img { max-width:100%; max-height:200px; border-radius:8px; object-fit:contain; }
+        .upload-filename { font-size:0.8em; color:var(--dark-green); margin-top:6px; font-weight:600; }
+
+        .notice-box {
+            background:#fffdf0; border-left:4px solid var(--gold);
+            border-radius:0 8px 8px 0; padding:11px 13px;
+            font-size:0.83em; color:#666; line-height:1.6; margin-bottom:14px;
+        }
+        .notice-box strong { color:#856404; }
+
+        .btn-submit {
+            width:100%; padding:15px; background:var(--dark-green); color:white;
+            border:none; border-radius:10px; font-family:'Kanit'; font-size:1.05em;
+            font-weight:700; cursor:pointer; transition:all 0.2s;
+            box-shadow:0 4px 14px rgba(10,75,51,0.2);
+        }
+        .btn-submit:hover { background:#063222; transform:translateY(-1px); }
+        .btn-submit:disabled { background:#aaa; cursor:not-allowed; box-shadow:none; transform:none; }
+
+        .error-msg { background:#fdedec; color:#c0392b; padding:11px 14px; border-radius:8px; font-size:0.88em; margin-top:12px; display:none; }
+
+        @media(max-width:480px) { .page-header{height:170px;} .page-header-content h1{font-size:1.4rem;} }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <div class="page-header-bg"></div>
+    <div class="page-header-overlay"></div>
+    <div class="page-header-content">
+        <div class="badge">Huai Nam Yen Waterfall</div>
+        <h1>ชำระเงิน</h1>
+    </div>
+</div>
+
+<div class="content-wrap">
+
+    <!-- ยอดชำระ -->
+    <div class="amount-banner">
+        <div class="amount-label">ยอดชำระค่าเข้าชม</div>
+        <div class="amount-value"><span id="amountDisplay">—</span> <span class="amount-unit">บาท</span></div>
+        <div class="booking-ref">Booking ID: <span id="bookingIdTop">—</span></div>
+    </div>
+
+    <!-- ข้อมูลบัญชี -->
+    <div class="card">
+        <div class="card-title">โอนเงินเข้าบัญชี</div>
+        <div class="bank-box" id="bankContainer">
+            <div style="text-align:center;color:#bbb;font-size:0.85em;padding:16px 0;">⏳ กำลังโหลดข้อมูลบัญชี...</div>
+        </div>
+        <div class="bank-note">โอนเงินตามยอดที่แสดงด้านบน<br>จากนั้นแนบสลิปการโอนด้านล่าง</div>
+    </div>
+
+    <!-- รายละเอียดการจอง -->
+    <div class="card">
+        <div class="card-title">รายละเอียดการจอง</div>
+        <div id="bookingDetails">
+            <div style="text-align:center;color:#aaa;padding:16px 0;font-size:0.88em;">กำลังโหลด...</div>
+        </div>
+    </div>
+
+    <!-- แนบสลิป -->
+    <div class="card">
+        <div class="card-title">แนบสลิปการโอนเงิน</div>
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="slipFile" accept="image/*" onchange="previewSlip(this)">
+            <div class="upload-icon">📎</div>
+            <div class="upload-label">แตะเพื่อเลือกรูปสลิป<br><strong>รองรับ JPG, PNG</strong> ขนาดไม่เกิน 5 MB</div>
+            <div class="upload-preview" id="uploadPreview">
+                <img id="previewImg" src="" alt="slip preview">
+                <div class="upload-filename" id="uploadFilename"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notice-box">
+        <strong>หมายเหตุ:</strong> หลังส่งสลิปแล้ว แอดมินจะตรวจสอบและยืนยันการจองภายใน 1–2 วันทำการ
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitPayment()">ส่งสลิปและยืนยันการจอง</button>
+    <div class="error-msg" id="errorMsg"></div>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4",
+        authDomain:"maekhong-waterfall-51445.firebaseapp.com",
+        projectId:"maekhong-waterfall-51445",
+        storageBucket:"maekhong-waterfall-51445.firebasestorage.app",
+        messagingSenderId:"40565650481",
+        appId:"1:40565650481:web:9cf6a76cb388c61ea05110"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function compressImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const MAX = 1000;
+                    let w = img.width, h = img.height;
+                    if (w > MAX || h > MAX) {
+                        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                        else { w = Math.round(w * MAX / h); h = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    let base64 = canvas.toDataURL('image/jpeg', 0.7);
+                    if (base64.length > 900 * 1024) base64 = canvas.toDataURL('image/jpeg', 0.5);
+                    resolve(base64);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get('bookingId') || '';
+    const docId     = params.get('docId') || '';
+    const amount    = params.get('amount') || '0';
+
+    document.getElementById('amountDisplay').textContent = parseInt(amount).toLocaleString();
+    document.getElementById('bookingIdTop').textContent  = bookingId;
+
+    // โหลดข้อมูลบัญชีจาก Firestore settings/payment
+    async function loadQR() {
+        try {
+            const snap = await getDoc(doc(db, 'settings', 'payment'));
+            const container = document.getElementById('bankContainer');
+            if (snap.exists() && snap.data().bankAccountNumber) {
+                const d = snap.data();
+                container.innerHTML = `
+                    <div class="bank-row"><span class="bank-label">ธนาคาร</span><span class="bank-value">${d.bankName || '-'}</span></div>
+                    <div class="bank-row"><span class="bank-label">ชื่อบัญชี</span><span class="bank-value">${d.bankAccountName || '-'}</span></div>
+                    <div class="bank-row"><span class="bank-label">เลขบัญชี</span><span class="bank-value bank-number">${d.bankAccountNumber || '-'}</span></div>
+                `;
+            } else {
+                container.innerHTML = `<div style="text-align:center;color:#bbb;font-size:0.85em;padding:16px 0;">ยังไม่มีข้อมูลบัญชี กรุณาติดต่อแอดมิน</div>`;
+            }
+        } catch(e) {
+            document.getElementById('bankContainer').innerHTML = `<div style="text-align:center;color:#e74c3c;font-size:0.85em;padding:16px 0;">โหลดข้อมูลไม่สำเร็จ</div>`;
+        }
+    }
+
+    const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    function fmtDate(str) {
+        if (!str || str === '-') return '-';
+        const [y, m, d] = str.split('-');
+        if (!y || !m || !d) return str;
+        return `${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543}`;
+    }
+
+    function loadBookingDetails() {
+        const g = k => params.get(k) || '0';
+        const wfLocal = parseInt(g('wfLocal')), wfThai = parseInt(g('wfThai'));
+        const wfForeign = parseInt(g('wfForeign')), wfChild = parseInt(g('wfChild'));
+        const cvThai = parseInt(g('cvThai')), cvForeign = parseInt(g('cvForeign')), cvChild = parseInt(g('cvChild'));
+        const wantCave = g('wantCave') === '1';
+
+        const wfParts = [];
+        if (wfLocal)   wfParts.push(`คนในพื้นที่ ${wfLocal} คน`);
+        if (wfThai)    wfParts.push(`คนไทย ${wfThai} คน`);
+        if (wfForeign) wfParts.push(`ต่างชาติ ${wfForeign} คน`);
+        if (wfChild)   wfParts.push(`เด็ก ${wfChild} คน`);
+
+        const cvParts = [];
+        if (cvThai)    cvParts.push(`คนไทย ${cvThai} คน`);
+        if (cvForeign) cvParts.push(`ต่างชาติ ${cvForeign} คน`);
+        if (cvChild)   cvParts.push(`เด็ก ${cvChild} คน`);
+
+        const rows = [
+            ['หมายเลขการจอง', bookingId || '-'],
+            ['ชื่อ-นามสกุล', params.get('name') || '-'],
+            ['วันเข้าชม', fmtDate(params.get('date') || '-')],
+            ['วันที่เดินทางมาถึง', fmtDate(params.get('arrivalDate') || '-')],
+            ['รูปแบบการเข้าชม', params.get('visitType') || '-'],
+            ['จำนวนคน (น้ำตก)', wfParts.join(', ') || '-'],
+            ['จำนวนคน (ถ้ำ)', wantCave ? (cvParts.join(', ') || '-') : 'ไม่เข้าชม'],
+            ['ยานพาหนะ', params.get('vehicle') || '-'],
+            ['ยอดชำระ', parseInt(amount).toLocaleString() + ' บาท'],
+        ];
+        document.getElementById('bookingDetails').innerHTML = rows.map(([k,v]) =>
+            `<div class="info-row"><span class="key">${k}</span><span class="val">${v}</span></div>`
+        ).join('');
+    }
+
+    function formatTickets(t) {
+        if (!t) return '-';
+        const parts = [];
+        if (t.local)   parts.push(`คนในพื้นที่ ${t.local} คน`);
+        if (t.thai)    parts.push(`คนไทย ${t.thai} คน`);
+        if (t.foreign) parts.push(`ต่างชาติ ${t.foreign} คน`);
+        if (t.child)   parts.push(`เด็ก ${t.child} คน`);
+        return parts.length ? parts.join(', ') : '-';
+    }
+
+    window.previewSlip = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const preview = document.getElementById('uploadPreview');
+        const img = document.getElementById('previewImg');
+        const name = document.getElementById('uploadFilename');
+        const area = document.getElementById('uploadArea');
+        const reader = new FileReader();
+        reader.onload = e => {
+            img.src = e.target.result;
+            name.textContent = file.name;
+            preview.style.display = 'block';
+            area.classList.add('has-file');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    window.submitPayment = async function() {
+        const file = document.getElementById('slipFile').files[0];
+        const errEl = document.getElementById('errorMsg');
+        errEl.style.display = 'none';
+
+        if (!file) { errEl.textContent = 'กรุณาแนบสลิปการโอนเงินก่อน'; errEl.style.display = 'block'; return; }
+        if (!bookingId || !docId) { errEl.textContent = 'ไม่พบหมายเลขการจอง กรุณาจองใหม่อีกครั้ง'; errEl.style.display = 'block'; return; }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+
+        try {
+            btn.textContent = 'กำลังบีบอัดรูป...';
+            const base64 = await compressImage(file);
+            btn.textContent = 'กำลังบันทึก...';
+            await updateDoc(doc(db,'registrations', docId), { slipImageUrl: base64, status: 'รอแอดมินตรวจสอบ' });
+            const sp = new URLSearchParams({
+                bookingId, amount,
+                name:        params.get('name') || '',
+                date:        params.get('date') || '',
+                arrivalDate: params.get('arrivalDate') || '',
+                visitType:   params.get('visitType') || '',
+                vehicle:     params.get('vehicle') || '',
+            });
+            window.location.href = `payment-success-verify.html?${sp.toString()}`;
+
+        } catch(err) {
+            console.error(err);
+            errEl.textContent = 'เกิดข้อผิดพลาด: ' + (err.message || err.code || 'กรุณาลองใหม่อีกครั้ง');
+            errEl.style.display = 'block';
+            btn.disabled = false; btn.textContent = 'ส่งสลิปและยืนยันการจอง';
+        }
+    }
+
+    loadQR();
+    loadBookingDetails();
+</script>
+</body>
+</html>

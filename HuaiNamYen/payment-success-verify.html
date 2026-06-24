@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จองสำเร็จ - น้ำตกห้วยน้ำเย็น</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --dark-green:#0A4B33; --mint-green:#67A792; --gold:#cc8e35; --bg:#F0EBE0; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Prompt',sans-serif; background:var(--bg); min-height:100vh; }
+
+        .page-header {
+            position:relative; height:220px; overflow:hidden;
+            display:flex; align-items:flex-end; padding:0 20px 28px;
+        }
+        .page-header-bg {
+            position:absolute; inset:0;
+            background-image:url('195737.jpg');
+            background-size:cover; background-position:center 40%; z-index:0;
+        }
+        .page-header-overlay {
+            position:absolute; inset:0;
+            background:linear-gradient(to bottom,rgba(10,75,51,0.4) 0%,rgba(5,30,18,0.88) 100%);
+            z-index:1;
+        }
+        .page-header-content { position:relative; z-index:2; color:white; max-width:520px; width:100%; margin:0 auto; }
+        .badge { font-family:'Kanit'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase; color:var(--mint-green); margin-bottom:4px; }
+        .page-header-content h1 { font-family:'Kanit'; font-size:1.8rem; font-weight:700; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
+
+        .content-wrap { max-width:520px; margin:0 auto; padding:24px 20px 40px; }
+
+        .success-banner {
+            background:linear-gradient(135deg,var(--dark-green),#0d6644);
+            border-radius:16px; padding:28px 24px; text-align:center;
+            color:white; margin-bottom:16px;
+            box-shadow:0 4px 20px rgba(10,75,51,0.18);
+        }
+        .success-icon {
+            width:60px; height:60px; background:rgba(255,255,255,0.15);
+            border-radius:50%; display:flex; align-items:center; justify-content:center;
+            margin:0 auto 14px; font-size:1.8em;
+        }
+        .success-banner h2 { font-family:'Kanit'; font-size:1.4rem; margin-bottom:6px; }
+        .success-banner p { font-size:0.88em; opacity:0.85; line-height:1.5; }
+
+        .card {
+            background:white; border-radius:16px;
+            box-shadow:0 4px 20px rgba(10,75,51,0.08);
+            padding:22px 20px; margin-bottom:14px;
+        }
+        .card-title { font-family:'Kanit'; color:var(--dark-green); font-size:0.95rem; font-weight:600; margin-bottom:14px; }
+
+        .booking-id-box { background:#f7fbf9; border:2px solid rgba(103,167,146,0.35); border-radius:12px; padding:16px; text-align:center; margin-bottom:16px; }
+        .bid-label { font-size:0.75em; color:#888; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+        .bid-value { font-family:'Kanit'; font-size:1.9rem; color:var(--dark-green); font-weight:700; letter-spacing:2px; margin-bottom:10px; }
+        .copy-btn {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:6px 16px; border-radius:20px;
+            border:1.5px solid var(--mint-green); background:white; color:var(--mint-green);
+            font-family:'Prompt'; font-size:0.82em; font-weight:600; cursor:pointer; transition:all 0.2s;
+        }
+        .copy-btn:hover,.copy-btn.copied { background:var(--mint-green); color:white; }
+
+        .timeline { list-style:none; padding:0; margin:0; }
+        .timeline li { display:flex; gap:12px; margin-bottom:12px; align-items:flex-start; }
+        .tl-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78em; font-weight:700; flex-shrink:0; margin-top:1px; }
+        .tl-dot.done { background:var(--mint-green); color:white; }
+        .tl-dot.pending { background:#f0f0f0; color:#aaa; border:2px solid #e0e0e0; }
+        .tl-head { font-weight:600; font-size:0.88em; color:#333; }
+        .tl-sub  { font-size:0.78em; color:#888; margin-top:2px; }
+
+        .notice-box {
+            background:#fffdf0; border-left:4px solid var(--gold);
+            border-radius:0 8px 8px 0; padding:11px 13px;
+            font-size:0.83em; color:#666; line-height:1.6; margin-bottom:14px;
+        }
+        .notice-box strong { color:#856404; }
+
+        .btn-home {
+            display:block; text-align:center; padding:13px;
+            background:var(--dark-green); color:white; text-decoration:none;
+            border-radius:10px; font-family:'Kanit'; font-size:1em; font-weight:600;
+            transition:0.2s; margin-bottom:10px;
+        }
+        .btn-home:hover { background:#063222; }
+        .btn-cancel {
+            display:block; text-align:center; padding:11px;
+            background:white; color:#e74c3c; text-decoration:none;
+            border-radius:10px; border:1.5px solid #e74c3c; font-size:0.88em; transition:0.2s;
+        }
+        .btn-cancel:hover { background:#fdedec; }
+
+        .info-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #f0f0f0; font-size:0.86em; }
+        .info-row:last-child { border-bottom:none; }
+        .info-row .key { color:#888; }
+        .info-row .val { font-weight:600; color:#333; text-align:right; max-width:60%; }
+        @media(max-width:480px) { .page-header{height:180px;} .page-header-content h1{font-size:1.4rem;} }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <div class="page-header-bg"></div>
+    <div class="page-header-overlay"></div>
+    <div class="page-header-content">
+        <div class="badge">Huai Nam Yen Waterfall</div>
+        <h1>ยืนยันการจอง</h1>
+    </div>
+</div>
+
+<div class="content-wrap">
+
+    <div class="success-banner">
+        <div class="success-icon">✓</div>
+        <h2>ส่งข้อมูลสำเร็จแล้ว!</h2>
+        <p>ระบบได้รับการจองของคุณเรียบร้อยแล้ว<br>กรุณาบันทึกหมายเลขการจองไว้</p>
+    </div>
+
+    <div class="card">
+        <div class="booking-id-box">
+            <div class="bid-label">หมายเลขการจองของคุณ</div>
+            <div class="bid-value" id="bookingIdDisplay">—</div>
+            <button class="copy-btn" id="copyBtn" onclick="copyBookingId()"> คัดลอก</button>
+        </div>
+
+        <div class="card-title">ขั้นตอนถัดไป</div>
+        <ul class="timeline">
+            <li>
+                <div class="tl-dot done">✓</div>
+                <div><div class="tl-head">ส่งข้อมูลการจองแล้ว</div><div class="tl-sub">ระบบได้รับข้อมูลเรียบร้อย</div></div>
+            </li>
+            <li>
+                <div class="tl-dot pending">2</div>
+                <div><div class="tl-head">รอแอดมินตรวจสอบ</div><div class="tl-sub">ระยะเวลา 1–2 วันทำการ</div></div>
+            </li>
+            <li>
+                <div class="tl-dot pending">3</div>
+                <div><div class="tl-head">รับการยืนยันการอนุมัติ</div><div class="tl-sub">แจ้งผลทางอีเมลที่ลงทะเบียน</div></div>
+            </li>
+            <li>
+                <div class="tl-dot pending">4</div>
+                <div><div class="tl-head">แสดง Booking ID วันเดินทาง</div><div class="tl-sub">นำหมายเลขการจองมาแสดงที่จุดตรวจ</div></div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <div class="card-title">รายละเอียดการจอง</div>
+        <div id="bookingDetails"></div>
+    </div>
+
+    <div class="notice-box">
+        <strong>สำคัญ:</strong> กรุณาบันทึกหมายเลข <strong id="noticeId">—</strong> ไว้ <br>กรุณาตรวจสอบอีเมลของท่าน หากไม่ได้รับอีเมล โปรดตรวจสอบในโฟลเดอร์จดหมายขยะ (Spam) อีกครั้ง
+    </div>
+
+    <a href="index.html" class="btn-home">← กลับหน้าหลัก</a>
+</div>
+
+<script>
+    const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    function fmtDate(str) {
+        if (!str || str === '-') return '-';
+        const [y, m, d] = str.split('-');
+        if (!y || !m || !d) return str;
+        return `${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543}`;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get('bookingId') || 'ไม่พบหมายเลข';
+    document.getElementById('bookingIdDisplay').textContent = bookingId;
+    document.getElementById('noticeId').textContent = bookingId;
+
+    const rows = [
+        ['หมายเลขการจอง', bookingId],
+        ['ชื่อ-นามสกุล',  params.get('name') || '-'],
+        ['วันเข้าชม',      fmtDate(params.get('date') || '-')],
+        ['วันที่เดินทางมาถึง', fmtDate(params.get('arrivalDate') || '-')],
+        ['รูปแบบการเข้าชม', params.get('visitType') || '-'],
+        ['ยานพาหนะ',      params.get('vehicle') || '-'],
+        ['ยอดชำระ',       (parseInt(params.get('amount')||0)).toLocaleString() + ' บาท'],
+    ];
+    document.getElementById('bookingDetails').innerHTML = rows.map(([k,v]) =>
+        `<div class="info-row"><span class="key">${k}</span><span class="val">${v}</span></div>`
+    ).join('');
+    if (bookingId && bookingId !== 'ไม่พบหมายเลข') {
+        document.getElementById('cancelLink').href = `cancel-booking.html?bookingId=${bookingId}`;
+    }
+    window.copyBookingId = function() {
+        navigator.clipboard.writeText(bookingId).then(() => {
+            const btn = document.getElementById('copyBtn');
+            btn.textContent = '✓ คัดลอกแล้ว!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = '📋 คัดลอก'; btn.classList.remove('copied'); }, 2000);
+        }).catch(() => {
+            const el = document.createElement('textarea');
+            el.value = bookingId; document.body.appendChild(el); el.select();
+            document.execCommand('copy'); document.body.removeChild(el);
+            alert('คัดลอกแล้ว: ' + bookingId);
+        });
+    }
+</script>
+</body>
+</html>

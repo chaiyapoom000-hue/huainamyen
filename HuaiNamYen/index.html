@@ -1,0 +1,261 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>น้ำตกห้วยน้ำเย็น - ธรรมชาติที่แท้จริง</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+    <style>
+        .flatpickr-day.flatpickr-disabled { color:#ccc !important; background:rgba(0,0,0,0.04) !important; text-decoration:line-through; cursor:not-allowed !important; }
+    </style>
+    <style>
+        :root { --dark-green:#0A4B33; --mint-green:#67A792; --gold:#cc8e35; --bg:#F0EBE0; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Prompt',sans-serif; background:var(--bg); min-height:100vh; }
+
+        .hero {
+            position:relative; width:100%; min-height:100vh;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            padding:40px 20px 80px; overflow:hidden;
+        }
+        .hero-bg {
+            position:absolute; inset:0;
+            background-image:url('195737.jpg');
+            background-size:cover; background-position:center; z-index:0;
+        }
+        .hero-overlay {
+            position:absolute; inset:0;
+            background:linear-gradient(to bottom,rgba(10,75,51,0.55) 0%,rgba(10,75,51,0.35) 40%,rgba(5,40,25,0.88) 100%);
+            z-index:1;
+        }
+        .hero-content {
+            position:relative; z-index:2;
+            text-align:center; color:white; max-width:520px; width:100%;
+        }
+        .hero-badge {
+            display:inline-block;
+            background:rgba(255,255,255,0.15); backdrop-filter:blur(6px);
+            border:1px solid rgba(255,255,255,0.25);
+            padding:5px 16px; border-radius:20px;
+            font-size:0.75rem; letter-spacing:3px; text-transform:uppercase;
+            font-family:'Kanit'; margin-bottom:16px; color:rgba(255,255,255,0.9);
+        }
+        .hero h1 {
+            font-family:'Kanit',sans-serif;
+            font-size:clamp(2.4rem,8vw,4rem); font-weight:700;
+            line-height:1.1; margin-bottom:8px;
+            text-shadow:0 2px 12px rgba(0,0,0,0.3);
+        }
+        .hero h2 {
+            font-family:'Kanit',sans-serif; font-size:1.1rem; font-weight:500;
+            letter-spacing:2px; text-transform:uppercase;
+            color:rgba(255,255,255,0.8); margin-bottom:16px;
+        }
+        .hero p {
+            font-size:0.9rem; color:rgba(255,255,255,0.97);
+            line-height:1.7; max-width:380px; margin:0 auto 28px;
+            text-shadow:0 1px 6px rgba(0,0,0,0.4);
+        }
+
+        /* Floating quota badge */
+        .quota-float {
+            position:fixed; top:16px; right:16px; background:white;
+            border-radius:12px; padding:12px 16px;
+            box-shadow:0 4px 16px rgba(0,0,0,0.12);
+            border-left:4px solid var(--dark-green); z-index:100; min-width:160px;
+        }
+        .qf-label { font-size:0.72em; color:#888; margin-bottom:4px; }
+        .qf-count { font-family:'Kanit'; font-size:1.1em; color:var(--dark-green); font-weight:700; margin-bottom:6px; }
+        .qf-bar-wrap { height:5px; background:#eee; border-radius:99px; overflow:hidden; }
+        .qf-bar { height:100%; border-radius:99px; background:var(--mint-green); transition:width 0.6s ease; }
+
+        /* Check quota card */
+        .check-card {
+            background:rgba(255,255,255,0.12); backdrop-filter:blur(12px);
+            border:1px solid rgba(255,255,255,0.2);
+            border-radius:16px; padding:20px 24px; margin-bottom:20px; text-align:center;
+        }
+        .check-card label {
+            display:block; font-size:0.88em; font-weight:600;
+            color:rgba(255,255,255,0.95); letter-spacing:0.5px; margin-bottom:10px;
+        }
+        .check-card input[type="text"] {
+            width:100%; padding:14px 18px; border-radius:10px; border:none;
+            font-family:'Prompt'; font-size:1.05em; text-align:center;
+            background:rgba(255,255,255,0.97); color:#333;
+        }
+        .check-card input:focus { outline:2px solid var(--mint-green); }
+
+        .status-result {
+            margin-top:10px; padding:10px 14px; border-radius:8px;
+            font-size:0.88em; font-weight:600;
+            display:none; align-items:center; gap:8px;
+            background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9);
+        }
+        .status-result.show { display:flex; }
+        .status-result.available { background:rgba(39,174,96,0.25); color:#c8f5d8; }
+        .status-result.warning   { background:rgba(230,126,34,0.25); color:#fde8c8; }
+        .status-result.full      { background:rgba(231,76,60,0.25);  color:#fdd; }
+        .mini-bar-wrap { flex:1; height:5px; background:rgba(255,255,255,0.2); border-radius:99px; overflow:hidden; }
+        .mini-bar { height:100%; border-radius:99px; }
+
+        /* Buttons */
+        .btn-book {
+            display:block; background:white; color:var(--dark-green);
+            text-decoration:none; padding:15px 24px; border-radius:50px;
+            font-family:'Kanit',sans-serif; font-size:1.1rem; font-weight:700;
+            letter-spacing:1px; text-align:center;
+            transition:all 0.25s;
+            box-shadow:0 4px 20px rgba(0,0,0,0.2); margin-bottom:14px;
+        }
+        .btn-book:hover { background:var(--dark-green); color:white; transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,0.25); }
+        .btn-book.disabled { background:rgba(255,255,255,0.4); color:rgba(255,255,255,0.6); pointer-events:none; box-shadow:none; }
+
+        .secondary-links { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+        .secondary-links a {
+            color:rgba(255,255,255,0.75); text-decoration:none;
+            font-size:0.83em; border-bottom:1px solid rgba(255,255,255,0.3);
+            padding-bottom:1px; transition:color 0.2s;
+        }
+        .secondary-links a:hover { color:white; border-color:white; }
+
+        @media(max-width:400px) { .quota-float { display:none; } }
+    </style>
+</head>
+<body>
+
+<div class="quota-float">
+    <div class="qf-label">ยอดเข้าชมวันนี้</div>
+    <div class="qf-count" id="todayCount">กำลังโหลด...</div>
+    <div class="qf-bar-wrap"><div class="qf-bar" id="todayBar" style="width:0%"></div></div>
+</div>
+
+<div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-badge">Huai Nam Yen Waterfall · อมก๋อย</div>
+        <h1>น้ำตกห้วยน้ำเย็น</h1>
+        <h2>ลงทะเบียนจองการเข้าชม</h2>
+        <p>สัมผัสธรรมชาติที่แท้จริง จำกัดผู้เข้าชมออนไลน์เพียง 150 ท่านต่อวัน เพื่อรักษาสมดุลของระบบนิเวศ</p>
+
+        <div style="background:rgba(231,76,60,0.18);border:1px solid rgba(231,76,60,0.4);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:0.82em;color:#fdd;line-height:1.6;text-align:left;">
+             <strong>เปิดให้เข้าชมตั้งแต่เดือนกรกฎาคม-เดือนตุลาคม<br>ปิดรับจองทุกวันพุธ — ยกเว้น 29 ก.ค. 2569</strong> 
+        </div>
+
+        <div class="check-card">
+            <label>เลือกวันที่ต้องการเข้าชม</label>
+            <input type="text" id="checkDate" placeholder="เลือกวันที่" readonly style="cursor:pointer;">
+            <div class="status-result" id="statusResult">เลือกวันที่เพื่อตรวจสอบโควตา</div>
+        </div>
+
+        <a href="info-before-booking.html" class="btn-book" id="bookBtn">จองเข้าชม — BOOK NOW</a>
+
+        <div class="secondary-links"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { initializeFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const firebaseConfig = { apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4", authDomain:"maekhong-waterfall-51445.firebaseapp.com", projectId:"maekhong-waterfall-51445", storageBucket:"maekhong-waterfall-51445.firebasestorage.app", messagingSenderId:"40565650481", appId:"1:40565650481:web:9cf6a76cb388c61ea05110" };
+    const app = initializeApp(firebaseConfig);
+    const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+    // flatpickr — ล็อกวันพุธในปฏิทิน
+    flatpickr('#checkDate', {
+        dateFormat: 'Y-m-d',
+        minDate: '2026-07-02',
+        maxDate: '2026-10-31',
+        locale: 'th',
+        disable: [function(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth()+1).padStart(2,'0');
+            const d = String(date.getDate()).padStart(2,'0');
+            if (`${y}-${m}-${d}` === '2026-07-29') return false;
+            return date.getDay() === 3;
+        }],
+        onChange: function(selectedDates, dateStr) {
+            if (dateStr) checkAvailability(dateStr);
+        }
+    });
+
+    async function countForDate(date) {
+        const snap = await getDoc(doc(db, "daily_quota", date));
+        return snap.exists() ? (snap.data().count || 0) : 0;
+    }
+
+    async function loadTodayStats() {
+        const today = new Date().toISOString().split('T')[0];
+        const used = await countForDate(today);
+        const pct = Math.min((used / 150) * 100, 100);
+        const barColor = used >= 150 ? '#e74c3c' : used >= 120 ? '#e67e22' : '#67A792';
+        document.getElementById('todayCount').textContent = `${used} / 150 ท่าน`;
+        document.getElementById('todayBar').style.width = pct + '%';
+        document.getElementById('todayBar').style.background = barColor;
+    }
+
+    function isBlockedDate(dateStr) {
+        if (dateStr === '2026-07-29') return false;
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.getDay() === 3;
+    }
+
+    window.checkAvailability = async function(date) {
+        if (!date) date = document.getElementById('checkDate').value;
+        if (!date) return;
+        const result = document.getElementById('statusResult');
+        const btn = document.getElementById('bookBtn');
+        result.className = 'status-result show';
+
+        if (isBlockedDate(date)) {
+            result.className = 'status-result full show';
+            result.innerHTML = '🔴 ปิดรับจองทุกวันพุธ — กรุณาเลือกวันอื่น';
+            btn.className = 'btn-book disabled'; btn.textContent = 'ปิดรับจองวันพุธ'; btn.href = '#';
+            return;
+        }
+
+        const _today = new Date(); _today.setHours(0,0,0,0);
+        const _minD = new Date(_today); _minD.setDate(_minD.getDate() + 3);
+        const _sel = new Date(date + 'T00:00:00');
+        if (_sel < _minD) {
+            const used2 = await countForDate(date);
+            const rem2 = 150 - used2;
+            const pct2 = Math.min((used2/150)*100,100);
+            result.className = 'status-result show';
+            result.style.background = 'rgba(80,80,80,0.18)';
+            result.innerHTML = `⚫ ปิดการจองแล้ว — จำนวนผู้เข้าชม ${used2}/150 ท่าน<div class="mini-bar-wrap"><div class="mini-bar" style="width:${pct2}%;background:#888;"></div></div>`;
+            btn.className = 'btn-book disabled'; btn.style.background='#666'; btn.textContent = 'ปิดการจองแล้ว'; btn.href = '#';
+            return;
+        }
+        result.style.background = '';
+
+        result.innerHTML = '⏳ กำลังตรวจสอบ...';
+        const used = await countForDate(date);
+        const remaining = 150 - used;
+        const pct = Math.min((used / 150) * 100, 100);
+        if (remaining <= 0) {
+            result.className = 'status-result full show';
+            result.innerHTML = `🔴 เต็มแล้ว (150/150) — ออนไลน์เต็มแล้ว<div class="mini-bar-wrap"><div class="mini-bar" style="width:100%;background:#e74c3c;"></div></div>`;
+            btn.className = 'btn-book disabled'; btn.textContent = 'FULL — คิวออนไลน์เต็ม'; btn.href = '#';
+        } else if (remaining <= 30) {
+            result.className = 'status-result warning show';
+            result.innerHTML = `🟡 เหลือน้อย! ว่างอีก ${remaining} ท่าน (${used}/150)<div class="mini-bar-wrap"><div class="mini-bar" style="width:${pct}%;background:#e67e22;"></div></div>`;
+            btn.className = 'btn-book'; btn.textContent = 'จองด่วน — เหลือน้อย!';
+            btn.href = `info-before-booking.html?date=${date}`;
+        } else {
+            result.className = 'status-result available show';
+            result.innerHTML = `🟢 ว่าง ${remaining} ท่าน (${used}/150)<div class="mini-bar-wrap"><div class="mini-bar" style="width:${pct}%;background:#27ae60;"></div></div>`;
+            btn.className = 'btn-book'; btn.textContent = 'จองเข้าชม — BOOK NOW';
+            btn.href = `info-before-booking.html?date=${date}`;
+        }
+    }
+
+    loadTodayStats();
+</script>
+</body>
+</html>

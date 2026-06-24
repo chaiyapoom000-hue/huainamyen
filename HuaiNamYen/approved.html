@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายการอนุมัติแล้ว - น้ำตกห้วยน้ำเย็น</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --dark-green:#0A4B33; --mint-green:#67A792; --gold:#cc8e35; --bg:#F0EBE0; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Prompt',sans-serif; background:#f5f6fa; min-height:100vh; }
+
+        /* TOPBAR */
+        .topbar { background:var(--dark-green); color:white; display:flex; align-items:center; gap:12px; padding:0 20px; height:52px; position:sticky; top:0; z-index:50; }
+        .topbar-logo { font-size:1.3em; }
+        .topbar-title { font-family:'Kanit'; font-weight:700; font-size:1em; flex:1; }
+        .btn-back { padding:6px 14px; border-radius:7px; border:1.5px solid rgba(255,255,255,0.3); background:transparent; color:white; font-family:'Kanit'; font-size:0.82em; cursor:pointer; }
+        .btn-back:hover { background:rgba(255,255,255,0.1); }
+
+        /* BANNER */
+        .dash-banner { position:relative; width:100%; height:90px; overflow:hidden; }
+        .dash-banner-bg { position:absolute; inset:0; background-image:url('195737.jpg'); background-size:cover; background-position:center 40%; }
+        .dash-banner-overlay { position:absolute; inset:0; background:linear-gradient(to right, rgba(10,75,51,0.82) 0%, rgba(10,75,51,0.5) 100%); }
+        .dash-banner-content { position:relative; z-index:1; padding:18px 24px; color:white; }
+        .dash-banner-content .badge { font-size:0.68em; letter-spacing:2px; text-transform:uppercase; background:rgba(255,255,255,0.15); padding:3px 10px; border-radius:20px; display:inline-block; margin-bottom:4px; font-family:'Kanit'; }
+        .dash-banner-content h2 { font-family:'Kanit'; font-size:1.15em; font-weight:700; }
+
+        .main-content { padding:16px 16px 40px; max-width:900px; margin:0 auto; }
+
+        /* SECTION HEADING */
+        .section-heading { font-family:'Kanit'; font-size:0.82em; font-weight:700; color:#888; letter-spacing:2px; text-transform:uppercase; margin:20px 0 10px; padding-bottom:6px; border-bottom:2px solid #e8e8e8; }
+
+        /* FILTER BAR */
+        .filter-bar { background:white; border-radius:12px; padding:14px 16px; margin-bottom:14px; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; box-shadow:0 1px 6px rgba(0,0,0,0.06); }
+        .fg { display:flex; flex-direction:column; gap:4px; }
+        .fg label { font-size:0.75em; color:#888; font-weight:600; }
+        .filter-bar input[type="date"], .filter-bar input[type="text"] { padding:7px 10px; border:1.5px solid #ddd; border-radius:7px; font-family:'Prompt'; font-size:0.83em; }
+        .btn-filter { padding:7px 14px; border-radius:7px; border:none; font-family:'Prompt'; font-size:0.83em; font-weight:600; cursor:pointer; }
+        .btn-apply { background:var(--dark-green); color:white; }
+        .btn-clear  { background:#f0f0f0; color:#555; }
+        .btn-export { background:#eaf4fb; color:#1a6a9a; }
+
+        /* STAT ROW */
+        .stat-row { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+        .stat-pill { background:white; border-radius:10px; padding:10px 18px; box-shadow:0 1px 6px rgba(0,0,0,0.06); }
+        .sp-label { font-size:0.73em; color:#888; }
+        .sp-value { font-family:'Kanit'; font-size:1.3em; font-weight:700; color:#1e8449; }
+
+        /* TABLE */
+        .table-wrap { background:white; border-radius:12px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.06); }
+        .table-scroll { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; font-size:0.83em; min-width:620px; }
+        thead tr { background:var(--dark-green); color:white; }
+        th { padding:10px 12px; text-align:left; font-family:'Kanit'; font-weight:600; font-size:0.85em; white-space:nowrap; }
+        td { padding:10px 12px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+        tr:last-child td { border-bottom:none; }
+        tr:hover td { background:#f7fbf9; }
+        .table-empty { text-align:center; color:#aaa; padding:32px; }
+        .bid { font-family:'Kanit'; font-size:0.78em; color:var(--dark-green); font-weight:700; }
+
+        #loginScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
+        .login-box { background:white; border-radius:16px; padding:32px; width:320px; box-shadow:0 4px 24px rgba(0,0,0,0.1); text-align:center; }
+        .login-box h2 { font-family:'Kanit'; color:var(--dark-green); margin-bottom:16px; }
+        .login-box input { width:100%; padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-family:'Prompt'; font-size:0.95em; margin-bottom:10px; }
+        .login-box button { width:100%; padding:11px; background:var(--dark-green); color:white; border:none; border-radius:8px; font-family:'Kanit'; font-size:1em; cursor:pointer; }
+
+        /* MODAL */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; align-items:center; justify-content:center; padding:16px; }
+        .modal-overlay.open { display:flex; }
+        .modal-box { background:white; border-radius:16px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,0.2); }
+        .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #f0f0f0; position:sticky; top:0; background:white; z-index:1; border-radius:16px 16px 0 0; }
+        .modal-header-title { font-family:'Kanit'; font-size:1em; font-weight:700; color:#222; }
+        .modal-bid { font-family:'Kanit'; font-size:1.15rem; color:var(--dark-green); font-weight:700; text-align:center; padding:14px 0 6px; }
+        .modal-close { background:none; border:none; font-size:1.3em; cursor:pointer; color:#888; line-height:1; padding:2px 6px; }
+        .modal-close:hover { color:#333; }
+        .modal-body { padding:4px 20px 24px; }
+        .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 20px; }
+        .modal-field { padding:9px 0; border-bottom:1px solid #f5f5f5; }
+        .modal-field:last-child { border-bottom:none; }
+        .mf-label { font-size:0.72em; color:#999; margin-bottom:2px; }
+        .mf-value { font-size:0.88em; font-weight:600; color:#222; }
+        .modal-divider { grid-column:1/-1; border:none; border-top:1.5px solid #f0f0f0; margin:6px 0; }
+        .modal-section { grid-column:1/-1; font-family:'Kanit'; font-size:0.72em; color:#888; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:10px 0 2px; }
+        tr.clickable-row { cursor:pointer; }
+
+        /* REPORT MODAL */
+        .report-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:300; flex-direction:column; }
+        .report-overlay.open { display:flex; }
+        .report-topbar { background:#1a1a1a; color:white; display:flex; align-items:center; justify-content:space-between; padding:10px 20px; flex-shrink:0; gap:10px; flex-wrap:wrap; }
+        .report-topbar-title { font-family:'Kanit'; font-size:1em; }
+        .report-topbar-btns { display:flex; gap:8px; align-items:center; }
+        .btn-dl { padding:7px 16px; border-radius:7px; border:none; font-family:'Kanit'; font-size:0.85em; cursor:pointer; font-weight:600; }
+        .btn-dl-jpg { background:#f39c12; color:white; }
+        .btn-dl-pdf { background:#e74c3c; color:white; }
+        .btn-dl-jpg:hover { background:#d68910; }
+        .btn-dl-pdf:hover { background:#c0392b; }
+        .btn-report-close { background:transparent; border:1.5px solid rgba(255,255,255,0.4); color:white; padding:6px 14px; border-radius:7px; font-family:'Kanit'; font-size:0.85em; cursor:pointer; }
+        .report-scroll { flex:1; overflow-y:auto; padding:24px 16px; background:#888; display:flex; flex-direction:column; align-items:center; gap:24px; }
+        .report-sheet { background:white; width:100%; max-width:680px; padding:32px 36px; border-radius:4px; box-shadow:0 4px 20px rgba(0,0,0,0.25); page-break-after:always; }
+        .rs-header { text-align:center; border-bottom:2px solid #0A4B33; padding-bottom:14px; margin-bottom:18px; }
+        .rs-header h2 { font-family:'Kanit'; font-size:1.1rem; color:#0A4B33; font-weight:700; }
+        .rs-header p { font-size:0.78em; color:#888; margin-top:3px; }
+        .rs-day { margin-bottom:16px; }
+        .rs-day-title { font-family:'Kanit'; font-size:0.88em; font-weight:700; color:#0A4B33; background:#f0f7f4; padding:5px 10px; border-radius:6px; margin-bottom:6px; }
+        .rs-row { display:flex; gap:8px; padding:6px 10px; border-bottom:1px solid #f5f5f5; font-size:0.82em; align-items:flex-start; }
+        .rs-row:last-child { border-bottom:none; }
+        .rs-num { font-family:'Kanit'; color:#888; min-width:22px; font-size:0.85em; padding-top:1px; }
+        .rs-content { flex:1; display:flex; flex-direction:column; gap:2px; }
+        .rs-line1 { display:flex; gap:8px; align-items:baseline; }
+        .rs-line2 { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+        .rs-name { font-weight:600; color:#222; flex:1; min-width:0; }
+        .rs-bid { font-family:'Kanit'; font-size:0.75em; color:#0A4B33; white-space:nowrap; min-width:120px; text-align:right; }
+        .rs-tag { font-size:0.74em; color:#666; background:#f5f5f5; padding:1px 6px; border-radius:4px; }
+        .rs-empty { text-align:center; color:#bbb; font-size:0.85em; padding:20px 0; }
+        .rs-footer { margin-top:18px; border-top:1px solid #ddd; padding-top:10px; display:flex; justify-content:flex-end; gap:20px; }
+        .rs-footer span { font-size:0.8em; color:#666; }
+        .rs-footer strong { color:#0A4B33; }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen" style="display:none;">
+    <div class="login-box">
+        <h2>เข้าสู่ระบบ</h2>
+        <input type="email" id="loginEmail" placeholder="อีเมล">
+        <input type="password" id="loginPassword" placeholder="รหัสผ่าน">
+        <button onclick="doLogin()">เข้าสู่ระบบ</button>
+        <div id="loginError" style="color:#e74c3c;font-size:0.82em;margin-top:8px;"></div>
+    </div>
+</div>
+
+<div id="mainScreen" style="display:none;">
+    <div class="topbar">
+        <div class="topbar-logo">🌿</div>
+        <div class="topbar-title">รายการอนุมัติแล้ว</div>
+        <button class="btn-back" onclick="history.back()">← กลับ</button>
+    </div>
+
+    <div class="dash-banner">
+        <div class="dash-banner-bg"></div>
+        <div class="dash-banner-overlay"></div>
+        <div class="dash-banner-content">
+            <div class="badge">Approved</div>
+            <h2>รายการที่อนุมัติแล้ว</h2>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="section-heading">ตัวกรอง</div>
+        <div class="filter-bar">
+            <div class="fg"><label>Booking ID</label><input type="text" id="filterBookingId" placeholder="HNY-..."></div>
+            <div class="fg"><label>เดือนเข้าชม</label><select id="filterMonth"><option value="">ทุกเดือน</option><option value="07">ก.ค. 2569</option><option value="08">ส.ค. 2569</option><option value="09">ก.ย. 2569</option><option value="10">ต.ค. 2569</option></select></div>
+            <div class="fg"><label>วันเข้าชม</label><input type="date" id="filterVisitDate"></div>
+            <div class="fg"><label>วันที่มาถึง</label><input type="date" id="filterArrivalDate"></div>
+            <div class="fg"><label>พาหนะ</label><select id="filterVehicle"><option value="">ทุกประเภท</option><option value="เหมารถกระบะชาวบ้าน (4,000 บาท)">เหมารถกระบะชาวบ้าน</option><option value="จอยหน้างานรถกระบะชาวบ้าน — ค้างคืน (4,000 บาท)">จอยหน้างานรถกระบะ</option><option value="รถมอเตอร์ไซค์รับส่งจากชุมชน (1,000 บาท/คน)">มอเตอร์ไซค์ชุมชน</option><option value="รถยนต์ส่วนตัวหรือรถยกสูง">รถยนต์ส่วนตัว</option><option value="รถมอเตอร์ไซค์ส่วนตัว (ต้องมีเกียร์)">มอเตอร์ไซค์ส่วนตัว</option></select></div>
+            <div class="fg"><label>เรียงตาม</label><select id="sortBy"><option value="">ค่าเริ่มต้น</option><option value="visitDate_asc">วันเข้าชม ↑</option><option value="visitDate_desc">วันเข้าชม ↓</option><option value="vehicle_asc">พาหนะ A-Z</option><option value="vehicle_desc">พาหนะ Z-A</option></select></div>
+            <button class="btn-filter btn-apply" onclick="applyFilter()">กรอง</button>
+            <button class="btn-filter btn-clear" onclick="clearFilter()">ล้าง</button>
+            <button class="btn-filter btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+            <button class="btn-filter" style="background:#e8f5e9;color:#1b5e20;" onclick="openReport()">รายชื่อผู้เข้าชม</button>
+        </div>
+
+        <div class="section-heading">สรุป</div>
+        <div class="stat-row">
+            <div class="stat-pill"><div class="sp-label">จำนวนรายการ</div><div class="sp-value" id="statCount">—</div></div>
+            <div class="stat-pill"><div class="sp-label">จำนวนคนรวม</div><div class="sp-value" id="statPeople">—</div></div>
+            <div class="stat-pill"><div class="sp-label">รายได้รวม</div><div class="sp-value" id="statRevenue" style="font-size:1.1em">—</div></div>
+        </div>
+
+        <div class="section-heading">รายการ</div>
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th><th>ชื่อ</th><th>เบอร์</th>
+                            <th>วันเข้าชม</th><th>วันที่มาถึง</th><th>จำนวนคน</th>
+                            <th>ยอด (฿)</th><th>การเดินทาง</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="8" class="table-empty">กำลังโหลด...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="report-overlay" id="reportModal">
+    <div class="report-topbar">
+        <span class="report-topbar-title"> รายชื่อผู้เข้าชมน้ำตกห้วยน้ำเย็น</span>
+        <div class="report-topbar-btns">
+            <button class="btn-dl btn-dl-jpg" onclick="downloadJPG()">⬇ โหลด JPG</button>
+            <button class="btn-dl btn-dl-pdf" onclick="downloadPDF()">⬇ โหลด PDF</button>
+            <button class="btn-report-close" onclick="closeReport()">✕ ปิด</button>
+        </div>
+    </div>
+    <div class="report-scroll" id="reportScroll">
+        <div id="reportSheets"></div>
+    </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal" onclick="handleOverlayClick(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-header-title">รายละเอียดการจอง</span>
+            <button class="modal-close" onclick="closeDetail()">✕</button>
+        </div>
+        <div class="modal-bid" id="modalBid">—</div>
+        <div class="modal-body">
+            <div class="modal-grid" id="modalContent"></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const firebaseConfig = { apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4", authDomain:"maekhong-waterfall-51445.firebaseapp.com", projectId:"maekhong-waterfall-51445", storageBucket:"maekhong-waterfall-51445.firebasestorage.app", messagingSenderId:"40565650481", appId:"1:40565650481:web:9cf6a76cb388c61ea05110" };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const PROJECT_ID = 'maekhong-waterfall-51445';
+    const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+    let currentUser = null, allData = [], filteredData = [];
+
+    function parseValue(v) {
+        if ('stringValue'  in v) return v.stringValue;
+        if ('integerValue' in v) return parseInt(v.integerValue);
+        if ('doubleValue'  in v) return v.doubleValue;
+        if ('booleanValue' in v) return v.booleanValue;
+        if ('timestampValue' in v) { const d=new Date(v.timestampValue); return { toDate:()=>d, seconds:Math.floor(d.getTime()/1000) }; }
+        if ('mapValue'   in v) return parseFields(v.mapValue.fields||{});
+        if ('arrayValue' in v) return (v.arrayValue.values||[]).map(parseValue);
+        return null;
+    }
+    function parseFields(fields) { const o={}; for(const[k,v] of Object.entries(fields||{})) o[k]=parseValue(v); return o; }
+    async function getToken() { return await currentUser.getIdToken(); }
+    async function fsList(col) {
+        const token = await getToken();
+        const res = await fetch(`${FS_BASE}:runQuery`, { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ structuredQuery: { from:[{collectionId:col}] } }) });
+        const rows = await res.json();
+        return rows.filter(r=>r.document).map(r=>({ id: r.document.name.split('/').pop(), ...parseFields(r.document.fields) }));
+    }
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'block';
+            loadData();
+        } else {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('mainScreen').style.display = 'none';
+        }
+    });
+
+    window.doLogin = async function() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass  = document.getElementById('loginPassword').value;
+        try { await signInWithEmailAndPassword(auth, email, pass); }
+        catch(e) { document.getElementById('loginError').textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'; }
+    }
+
+    async function loadData() {
+        const all = await fsList('registrations');
+        allData = all.filter(d => d.status === 'อนุมัติแล้ว');
+        allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
+        filteredData = [...allData];
+        renderTable();
+    }
+
+    const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    function fmtDate(str) {
+        if (!str || str === '-') return '-';
+        const [y,m,d] = str.split('-');
+        if (!y||!m||!d) return str;
+        return `${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543}`;
+    }
+
+    const PRIVATE_VEHICLES = ['รถยนต์ส่วนตัวหรือรถยกสูง','รถมอเตอร์ไซค์ส่วนตัว (ต้องมีเกียร์)'];
+    let currentDetailId = null;
+
+    async function fsGet(col, docId) {
+        const token = await getToken();
+        const res = await fetch(`${FS_BASE}/${col}/${docId}`, { headers:{'Authorization':'Bearer '+token} });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.fields ? parseFields(data.fields) : null;
+    }
+    async function fsPatch(col, docId, fields) {
+        const token = await getToken();
+        const firestoreFields = {};
+        for (const [k,v] of Object.entries(fields)) {
+            if (typeof v === 'string') firestoreFields[k] = { stringValue: v };
+            else if (typeof v === 'number') firestoreFields[k] = { integerValue: v };
+            else if (typeof v === 'boolean') firestoreFields[k] = { booleanValue: v };
+        }
+        const updateMask = Object.keys(fields).map(k=>`updateMask.fieldPaths=${k}`).join('&');
+        await fetch(`${FS_BASE}/${col}/${docId}?${updateMask}`, {
+            method:'PATCH', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({ fields: firestoreFields })
+        });
+    }
+
+    window.openDetail = function(id) {
+        currentDetailId = id;
+        const d = allData.find(x => x.id === id);
+        if (!d) return;
+        document.getElementById('modalBid').textContent = d.bookingId || '-';
+        const tk = d.tickets?.waterfall||{};
+        const cv = d.tickets?.cave||{};
+        const wantCave = d.wantCave;
+        const isPrivate = PRIVATE_VEHICLES.includes(d.vehicle||'');
+        const pickupTime = d.pickupTime || '';
+        document.getElementById('modalContent').innerHTML = `
+            <div class="modal-section">ข้อมูลส่วนตัว</div>
+            <div class="modal-field"><div class="mf-label">ชื่อ-นามสกุล</div><div class="mf-value">${d.fullName||'-'}</div></div>
+            <div class="modal-field"><div class="mf-label">เบอร์โทร</div><div class="mf-value">${d.phone||'-'}</div></div>
+            <div class="modal-field"><div class="mf-label">อายุ / เพศ</div><div class="mf-value">${d.age||'-'} ปี / ${d.gender||'-'}</div></div>
+            <div class="modal-field"><div class="mf-label">สัญชาติ</div><div class="mf-value">${d.nationality||'-'}</div></div>
+            <div class="modal-field"><div class="mf-label">อีเมล</div><div class="mf-value">${d.email||'-'}</div></div>
+            <div class="modal-field"><div class="mf-label">จังหวัด</div><div class="mf-value">${d.province||'-'}</div></div>
+            <div class="modal-field"><div class="mf-label">โรคประจำตัว</div><div class="mf-value">${d.disease||d.medicalCondition||'ไม่มี'}</div></div>
+            <div class="modal-field"><div class="mf-label">ผู้ติดต่อฉุกเฉิน</div><div class="mf-value">${d.emergencyContact||'-'}</div></div>
+            <hr class="modal-divider">
+            <div class="modal-section">วันเดินทาง</div>
+            <div class="modal-field"><div class="mf-label">วันเข้าชม</div><div class="mf-value">${fmtDate(d.visitDate||d.travelDate)}</div></div>
+            <div class="modal-field"><div class="mf-label">วันที่เดินทางมาถึง</div><div class="mf-value">${fmtDate(d.arrivalDate)}</div></div>
+            <div class="modal-field"><div class="mf-label">ยานพาหนะ</div><div class="mf-value">${d.vehicle||'-'}</div></div>
+            <div class="modal-field"><div class="mf-label">รูปแบบ</div><div class="mf-value">${d.visitType||'-'}</div></div>
+            ${!isPrivate ? `<div class="modal-field" style="grid-column:1/-1;">
+                <div class="mf-label">เวลารับส่ง</div>
+                <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+                    <input id="pickupTimeInput" type="text" value="${pickupTime}" placeholder="เช่น 07:00" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.88em;flex:1;">
+                    <button onclick="savePickupTime()" style="padding:6px 14px;background:var(--dark-green);color:white;border:none;border-radius:7px;font-family:'Kanit';font-size:0.82em;cursor:pointer;">บันทึก</button>
+                </div>
+            </div>` : ''}
+            <hr class="modal-divider">
+            <div class="modal-section">จำนวนคน</div>
+            <div class="modal-field"><div class="mf-label">เข้าชมน้ำตก (พื้นที่/นอกพื้นที่/ต่างชาติ/เด็ก)</div><div class="mf-value">${tk.local||0} / ${tk.thai||0} / ${tk.foreign||0} / ${tk.child||0}</div></div>
+            <div class="modal-field"><div class="mf-label">เข้าชมถ้ำ (ไทย/ต่างชาติ/เด็ก)</div><div class="mf-value">${wantCave ? `${cv.thai||0} / ${cv.foreign||0} / ${cv.child||0}` : 'X'}</div></div>
+            <div class="modal-field"><div class="mf-label">จำนวนคนรวม</div><div class="mf-value">${d.totalPeopleCount||'-'} คน</div></div>
+            <div class="modal-field"><div class="mf-label">ยอดชำระ</div><div class="mf-value">${(d.totalAmount||0).toLocaleString()} บาท</div></div>
+        `;
+        document.getElementById('detailModal').classList.add('open');
+    }
+
+    window.savePickupTime = async function() {
+        if (!currentDetailId) return;
+        const val = document.getElementById('pickupTimeInput').value.trim();
+        try {
+            await fsPatch('registrations', currentDetailId, { pickupTime: val });
+            const item = allData.find(x => x.id === currentDetailId);
+            if (item) item.pickupTime = val;
+            alert('บันทึกเวลารับส่งแล้ว ✓');
+        } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+    }
+
+    window.closeDetail = function() { document.getElementById('detailModal').classList.remove('open'); currentDetailId = null; }
+    window.handleOverlayClick = function(e) { if (e.target === document.getElementById('detailModal')) closeDetail(); }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        if (!filteredData.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="table-empty">ไม่พบรายการ</td></tr>';
+        } else {
+            tbody.innerHTML = filteredData.map(d => {
+                const ts = d.timestamp?.toDate ? d.timestamp.toDate().toLocaleDateString('th-TH') : '-';
+                return `<tr class="clickable-row" onclick="openDetail('${d.id}')">
+                    <td><div class="bid">${d.bookingId||'-'}</div><div style="font-size:0.75em;color:#aaa;">${ts}</div></td>
+                    <td>${d.fullName||'-'}</td>
+                    <td>${d.phone||'-'}</td>
+                    <td>${fmtDate(d.visitDate||d.travelDate)}</td>
+                    <td>${fmtDate(d.arrivalDate)}</td>
+                    <td style="text-align:center;">${d.totalPeopleCount||'-'}</td>
+                    <td style="text-align:right;">${(d.totalAmount||0).toLocaleString()}</td>
+                    <td>${d.vehicle||'-'}</td>
+                </tr>`;
+            }).join('');
+        }
+        const totalPeople  = filteredData.reduce((s,d)=>s+(d.totalPeopleCount||0),0);
+        const totalRevenue = filteredData.reduce((s,d)=>s+(d.totalAmount||0),0);
+        document.getElementById('statCount').textContent   = filteredData.length;
+        document.getElementById('statPeople').textContent  = totalPeople + ' คน';
+        document.getElementById('statRevenue').textContent = totalRevenue.toLocaleString() + ' ฿';
+    }
+
+    window.applyFilter = function() {
+        const bookingId   = document.getElementById('filterBookingId').value.trim().toLowerCase();
+        const filterMonth = document.getElementById('filterMonth').value;
+        const visitDate   = document.getElementById('filterVisitDate').value;
+        const arrivalDate = document.getElementById('filterArrivalDate').value;
+        const filterVehicle = document.getElementById('filterVehicle').value;
+        const sortBy      = document.getElementById('sortBy').value;
+        filteredData = allData.filter(d => {
+            if (bookingId    && !(d.bookingId||'').toLowerCase().includes(bookingId)) return false;
+            if (filterMonth  && !(d.visitDate||d.travelDate||'').startsWith('2026-'+filterMonth)) return false;
+            if (visitDate    && (d.visitDate||d.travelDate||'') !== visitDate)        return false;
+            if (arrivalDate  && (d.arrivalDate||'') !== arrivalDate)                  return false;
+            if (filterVehicle && !(d.vehicle||'').includes(filterVehicle))            return false;
+            return true;
+        });
+        if (sortBy === 'visitDate_asc')  filteredData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
+        if (sortBy === 'visitDate_desc') filteredData.sort((a,b) => (b.visitDate||b.travelDate||'').localeCompare(a.visitDate||a.travelDate||''));
+        if (sortBy === 'vehicle_asc')    filteredData.sort((a,b) => (a.vehicle||'').localeCompare(b.vehicle||''));
+        if (sortBy === 'vehicle_desc')   filteredData.sort((a,b) => (b.vehicle||'').localeCompare(a.vehicle||''));
+        renderTable();
+    }
+
+    window.clearFilter = function() {
+        document.getElementById('filterBookingId').value = '';
+        document.getElementById('filterMonth').value = '';
+        document.getElementById('filterVisitDate').value = '';
+        document.getElementById('filterArrivalDate').value = '';
+        document.getElementById('filterVehicle').value = '';
+        document.getElementById('sortBy').value = '';
+        filteredData = [...allData];
+        renderTable();
+    }
+
+    const MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    const REPORT_MONTHS = ['07','08','09','10'];
+
+    function buildReportSheet(monthNum) {
+        const monthName = MONTHS_FULL[parseInt(monthNum)-1];
+        const year = 2569;
+        const items = allData.filter(d => (d.visitDate||d.travelDate||'').startsWith('2026-'+monthNum));
+        const byDate = {};
+        items.forEach(d => {
+            const date = d.visitDate||d.travelDate||'';
+            if (!byDate[date]) byDate[date] = [];
+            byDate[date].push(d);
+        });
+        const sortedDates = Object.keys(byDate).sort();
+        const totalPeople = items.reduce((s,d)=>s+(d.totalPeopleCount||0),0);
+
+        let daysHtml = '';
+        if (!sortedDates.length) {
+            daysHtml = '<div class="rs-empty">ไม่มีรายการในเดือนนี้</div>';
+        } else {
+            sortedDates.forEach(date => {
+                const dayItems = byDate[date];
+                const [y,m,d] = date.split('-');
+                const dayLabel = `วันที่ ${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543} (${dayItems.reduce((s,x)=>s+(x.totalPeopleCount||0),0)} คน)`;
+                const rows = dayItems.map((x,i) => {
+                    const phone = x.phone||'-';
+                    const maskedPhone = phone.length >= 4 ? phone.slice(0, phone.length-4) + 'XXXX' : phone;
+                    const veh = (x.vehicle||'-').replace(/ \(.*?\)/g,'');
+                    const visitD = fmtDate(x.visitDate||x.travelDate);
+                    const arrD = fmtDate(x.arrivalDate);
+                    const wf      = x.tickets?.waterfall||{};
+                    const cv      = x.tickets?.cave||{};
+                    const wfLocal = wf.local||0;
+                    const wfThai  = wf.thai||0;
+                    const wfFor   = wf.foreign||0;
+                    const wfCh    = wf.child||0;
+                    const cvThai  = cv.thai||0;
+                    const cvFor   = cv.foreign||0;
+                    const cvCh    = cv.child||0;
+                    const wantCave = x.wantCave;
+                    const caveTotal = cvThai+cvFor+cvCh;
+                    const caveStr = (wantCave && caveTotal > 0) ? `${cvThai}/${cvFor}/${cvCh}` : '-';
+                    const wfStr = `คนไทย ${wfThai}` + (wfFor>0?` · ต่างชาติ ${wfFor}`:'') + (wfCh>0?` · เด็ก ${wfCh}`:'') + (wfLocal>0?` · พื้นที่ ${wfLocal}`:'');
+                    const caveLabel = (wantCave && caveTotal > 0) ? `คนไทย ${cvThai}` + (cvFor>0?` · ต่างชาติ ${cvFor}`:'') + (cvCh>0?` · เด็ก ${cvCh}`:'') : '-';
+                    const isPrivate = PRIVATE_VEHICLES.includes(x.vehicle||'');
+                    const pickupTime = x.pickupTime || '';
+                    return `<div class="rs-row">
+                        <span class="rs-num">${i+1}.</span>
+                        <div class="rs-content">
+                            <div class="rs-line1" style="font-size:0.85em;color:#222;">
+                                <span class="rs-name" style="font-size:1em;color:#222;">${x.fullName||'-'}</span>
+                                <span style="color:#333;font-weight:600;">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveLabel}</span>
+                                <span class="rs-bid" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+                                    <span>${x.bookingId||'-'}</span>
+                                    ${!isPrivate ? `<span style="display:flex;gap:4px;align-items:center;">
+                                        <input data-id="${x.id}" type="time" value="${pickupTime}" onchange="savePickupTimeReport(this)" style="width:90px;padding:2px 6px;border:1px solid #ccc;border-radius:5px;font-family:'Prompt';font-size:0.8em;text-align:center;" lang="th">
+                                        <button onclick="savePickupTimeReport(this.previousElementSibling)" style="padding:2px 7px;background:var(--dark-green);color:white;border:none;border-radius:5px;font-size:0.75em;cursor:pointer;">✓</button>
+                                    </span>` : ''}
+                                </span>
+                            </div>
+                            <div class="rs-line2" style="font-size:0.85em;color:#222;gap:10px;margin-top:3px;font-weight:500;">
+                                <span>เดินทาง <strong>${arrD}</strong></span>
+                                <span>เข้าชม <strong>${visitD}</strong></span>
+                                <span>${veh}</span>
+                                <span>${x.phone||'-'}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+                daysHtml += `<div class="rs-day"><div class="rs-day-title">${dayLabel}</div>${rows}</div>`;
+            });
+        }
+
+        return `<div class="report-sheet" id="sheet-${monthNum}">
+            <div class="rs-header">
+                <h2>รายชื่อผู้เข้าชมน้ำตกห้วยน้ำเย็น เดือน${monthName} ${year}</h2>
+                <p>จำนวนรายการ ${items.length} รายการ · รวม ${totalPeople} คน</p>
+            </div>
+            ${daysHtml}
+            <div class="rs-footer">
+                <span>จำนวนรายการ: <strong>${items.length}</strong></span>
+                <span>จำนวนคนรวม: <strong>${totalPeople} คน</strong></span>
+            </div>
+        </div>`;
+    }
+
+    window.savePickupTimeReport = async function(input) {
+        const id = input.dataset.id;
+        const val = input.value.trim();
+        try {
+            await fsPatch('registrations', id, { pickupTime: val });
+            const item = allData.find(x => x.id === id);
+            if (item) item.pickupTime = val;
+            input.style.borderColor = '#27ae60';
+            setTimeout(() => input.style.borderColor = '#ccc', 1500);
+        } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+    }
+
+    window.openReport = function() {
+        document.getElementById('reportSheets').innerHTML = REPORT_MONTHS.map(m => buildReportSheet(m)).join('');
+        document.getElementById('reportModal').classList.add('open');
+    }
+    window.closeReport = function() { document.getElementById('reportModal').classList.remove('open'); }
+
+    window.downloadJPG = async function() {
+        const sheets = REPORT_MONTHS.map(m => document.getElementById('sheet-'+m)).filter(Boolean);
+        for (let i = 0; i < sheets.length; i++) {
+            const canvas = await html2canvas(sheets[i], { scale:2, backgroundColor:'#ffffff', useCORS:true });
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/jpeg', 0.92);
+            const mName = MONTHS_FULL[parseInt(REPORT_MONTHS[i])-1];
+            a.download = `รายชื่อผู้เข้าชม_${mName}_2569.jpg`;
+            a.click();
+            await new Promise(r => setTimeout(r, 300));
+        }
+    }
+
+    window.downloadPDF = async function() {
+        const { jsPDF } = window.jspdf;
+        const sheets = REPORT_MONTHS.map(m => document.getElementById('sheet-'+m)).filter(Boolean);
+        const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+        for (let i = 0; i < sheets.length; i++) {
+            const canvas = await html2canvas(sheets[i], { scale:2, backgroundColor:'#ffffff', useCORS:true });
+            const imgData = canvas.toDataURL('image/jpeg', 0.92);
+            const pdfW = pdf.internal.pageSize.getWidth();
+            const pdfH = (canvas.height / canvas.width) * pdfW;
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+        }
+        pdf.save('รายชื่อผู้เข้าชม_2569.pdf');
+    }
+
+    window.exportCSV = function() {
+        const headers = ['Booking ID','ชื่อ','เบอร์','วันเข้าชม','วันที่มาถึง','จำนวนคน','ยอด (฿)','การเดินทาง'];
+        const rows = filteredData.map(d => [
+            d.bookingId||'', d.fullName||'', d.phone||'',
+            d.visitDate||d.travelDate||'', d.arrivalDate||'',
+            d.totalPeopleCount||0, d.totalAmount||0, d.vehicle||''
+        ]);
+        const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+        const a = document.createElement('a');
+        a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+        a.download = 'approved_bookings.csv';
+        a.click();
+    }
+</script>
+</body>
+</html>

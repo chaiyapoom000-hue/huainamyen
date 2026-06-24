@@ -1,0 +1,689 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียนเข้าชม - น้ำตกห้วยน้ำเย็น</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>.flatpickr-day.flatpickr-disabled { color:#ccc !important; background:rgba(0,0,0,0.04) !important; text-decoration:line-through; cursor:not-allowed !important; }</style>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+    <style>
+        :root { --dark-green:#0A4B33; --mint-green:#67A792; --gold:#cc8e35; --bg:#F0EBE0; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Prompt',sans-serif; background:var(--bg); min-height:100vh; }
+
+        /* ── Header ── */
+        .page-header {
+            position:relative; height:200px; overflow:hidden;
+            display:flex; align-items:flex-end; padding:0 20px 24px;
+        }
+        .page-header-bg {
+            position:absolute; inset:0;
+            background-image:url('195737.jpg');
+            background-size:cover; background-position:center 40%; z-index:0;
+        }
+        .page-header-overlay {
+            position:absolute; inset:0;
+            background:linear-gradient(to bottom,rgba(10,75,51,0.4) 0%,rgba(5,30,18,0.90) 100%);
+            z-index:1;
+        }
+        .page-header-content { position:relative; z-index:2; color:white; max-width:640px; width:100%; margin:0 auto; }
+        .back-link {
+            display:inline-flex; align-items:center; gap:6px;
+            color:rgba(255,255,255,0.75); text-decoration:none;
+            font-size:0.82em; margin-bottom:8px; transition:color 0.2s;
+        }
+        .back-link:hover { color:white; }
+        .hdr-badge { font-family:'Kanit'; font-size:0.68rem; letter-spacing:3px; text-transform:uppercase; color:var(--mint-green); margin-bottom:3px; }
+        .page-header-content h1 { font-family:'Kanit'; font-size:1.7rem; font-weight:700; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
+
+        /* ── Content ── */
+        .content-wrap { max-width:640px; margin:0 auto; padding:22px 16px 120px; }
+
+        /* Section card */
+        .sec-card {
+            background:white; border-radius:14px;
+            box-shadow:0 4px 20px rgba(10,75,51,0.07);
+            margin-bottom:14px; overflow:hidden;
+        }
+        .sec-header {
+            display:flex; align-items:center; gap:10px;
+            padding:14px 18px; background:#f7fbf9;
+            border-bottom:1px solid rgba(103,167,146,0.18);
+        }
+        .sec-num {
+            width:28px; height:28px; border-radius:8px;
+            background:var(--dark-green);
+            display:flex; align-items:center; justify-content:center;
+            font-family:'Kanit'; font-size:0.9em; font-weight:700; color:white; flex-shrink:0;
+        }
+        .sec-header h2 { font-family:'Kanit'; color:var(--dark-green); font-size:0.97rem; font-weight:700; }
+        .sec-body { padding:18px 18px 20px; }
+
+        /* Form elements */
+        .fg { margin-bottom:14px; }
+        .fg-row { display:flex; gap:12px; }
+        .fg-row .fg { flex:1; }
+        label.fl {
+            display:block; font-size:0.83em; font-weight:600;
+            color:#555; margin-bottom:4px;
+        }
+        label.fl .req { color:#e74c3c; margin-left:2px; }
+        input[type="text"], input[type="number"], input[type="email"],
+        input[type="date"], input[type="tel"], select, textarea {
+            width:100%; padding:10px 12px;
+            border:1.5px solid #e0e0e0; border-radius:8px;
+            font-family:'Prompt'; font-size:0.92em;
+            background:#fafafa; color:#333; transition:border-color 0.2s;
+        }
+        input:focus, select:focus { outline:none; border-color:var(--mint-green); background:white; }
+        input::placeholder, textarea::placeholder { color:#bbb; }
+
+        /* Radio group (เพศ) */
+        .radio-group { display:flex; gap:10px; flex-wrap:wrap; }
+        .radio-opt {
+            display:flex; align-items:center; gap:7px;
+            padding:9px 16px; border-radius:8px;
+            border:1.5px solid #e0e0e0; cursor:pointer;
+            font-size:0.9em; color:#555; transition:all 0.15s;
+            background:#fafafa;
+        }
+        .radio-opt input[type="radio"] { accent-color:var(--dark-green); width:15px; height:15px; }
+        .radio-opt:has(input:checked) {
+            border-color:var(--dark-green); background:rgba(10,75,51,0.05); color:var(--dark-green); font-weight:600;
+        }
+
+        /* Sub-section divider */
+        .sub-divider {
+            font-family:'Kanit'; font-size:0.82rem; font-weight:600;
+            color:var(--mint-green); margin:16px 0 10px;
+            padding-bottom:6px; border-bottom:1px solid rgba(103,167,146,0.2);
+        }
+
+        /* Ticket rows */
+        .ticket-area { background:#f7fbf9; border-radius:10px; padding:14px; border:1px solid rgba(103,167,146,0.2); margin-bottom:12px; }
+        .ticket-area-title { font-family:'Kanit'; font-size:0.88rem; color:var(--dark-green); font-weight:600; margin-bottom:10px; }
+        .ticket-row {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05);
+        }
+        .ticket-row:last-child { border-bottom:none; }
+        .ticket-info .tl { font-size:0.88em; color:#333; }
+        .ticket-info .tp { font-size:0.76em; color:var(--mint-green); font-weight:600; }
+        .qty-wrap { display:flex; align-items:center; gap:8px; }
+        .qty-btn {
+            width:28px; height:28px; border-radius:50%;
+            border:1.5px solid var(--dark-green); background:white;
+            color:var(--dark-green); font-size:1.1em; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; padding:0; line-height:1;
+        }
+        .qty-btn:hover { background:var(--dark-green); color:white; }
+        .qty-input { width:46px !important; text-align:center; padding:5px 4px !important; }
+        .free-note { font-size:0.78em; color:#999; margin-top:6px; font-style:italic; }
+
+        /* Cave checkbox */
+        .cave-toggle {
+            display:flex; align-items:center; gap:10px;
+            padding:12px 14px; border-radius:10px;
+            border:1.5px solid #e0e0e0; cursor:pointer;
+            margin-bottom:10px; transition:all 0.2s; background:#fafafa;
+        }
+        .cave-toggle:has(input:checked) { border-color:var(--dark-green); background:rgba(10,75,51,0.04); }
+        .cave-toggle input[type="checkbox"] { width:17px; height:17px; accent-color:var(--dark-green); cursor:pointer; flex-shrink:0; }
+        .cave-toggle .ct-label { font-size:0.9em; color:#444; }
+        .cave-toggle .ct-label strong { color:var(--dark-green); }
+        .cave-tickets { display:none; margin-top:4px; }
+        .cave-tickets.show { display:block; }
+
+        /* Quota indicator */
+        .quota-bar-wrap {
+            display:flex; align-items:center; gap:10px;
+            background:#f7fbf9; border-radius:8px; padding:10px 12px;
+            margin-bottom:14px; font-size:0.85em; color:#555;
+        }
+        .quota-bar-wrap .qb-bar { flex:1; height:6px; background:#e0e0e0; border-radius:99px; overflow:hidden; }
+        .quota-bar-wrap .qb-fill { height:100%; border-radius:99px; transition:width 0.4s; }
+
+        /* Price summary */
+        .price-box {
+            background:linear-gradient(135deg,var(--dark-green),#0d6644);
+            border-radius:12px; padding:16px 18px; margin-bottom:14px; color:white;
+        }
+        .price-box .pb-row { display:flex; justify-content:space-between; font-size:0.85em; padding:4px 0; opacity:0.85; }
+        .price-box .pb-row.total {
+            font-family:'Kanit'; font-size:1.1em; font-weight:700;
+            margin-top:8px; padding-top:10px;
+            border-top:1px solid rgba(255,255,255,0.2); opacity:1;
+        }
+        .price-box .pb-note { font-size:0.75em; opacity:0.7; margin-top:6px; }
+
+        /* Submit button */
+        .btn-submit {
+            width:100%; padding:15px;
+            background:var(--dark-green); color:white; border:none;
+            border-radius:10px; font-family:'Kanit'; font-size:1.05em;
+            font-weight:700; cursor:pointer; transition:all 0.2s;
+            box-shadow:0 4px 14px rgba(10,75,51,0.2);
+        }
+        .btn-submit:hover { background:#063222; transform:translateY(-1px); }
+        .btn-submit:disabled { background:#aaa; cursor:not-allowed; box-shadow:none; transform:none; }
+
+        @media(max-width:480px) {
+            .page-header { height:170px; }
+            .page-header-content h1 { font-size:1.4rem; }
+            .fg-row { flex-direction:column; gap:0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <div class="page-header-bg"></div>
+    <div class="page-header-overlay"></div>
+    <div class="page-header-content">
+        <a href="info-before-booking.html" class="back-link">← ย้อนกลับ</a>
+        <div class="hdr-badge">Huai Nam Yen Waterfall</div>
+        <h1>ลงทะเบียนเข้าชมสถานที่</h1>
+    </div>
+</div>
+
+<div class="content-wrap">
+
+    <!-- โควตา -->
+    <div class="quota-bar-wrap" id="quotaBar">
+        <span id="quotaText">กำลังตรวจสอบที่ว่าง...</span>
+        <div class="qb-bar"><div class="qb-fill" id="quotaFill" style="width:0%;background:#67A792;"></div></div>
+    </div>
+
+    <!-- ① ข้อมูลส่วนตัว -->
+    <div class="sec-card">
+        <div class="sec-header">
+            <div class="sec-num">1</div>
+            <h2>ข้อมูลส่วนตัวผู้ลงทะเบียน</h2>
+        </div>
+        <div class="sec-body">
+            <div class="fg">
+                <label class="fl">ชื่อ-นามสกุล <span class="req">*</span></label>
+                <input type="text" id="fullName" required placeholder="นายสมชาย ใจดี">
+            </div>
+            <div class="fg-row">
+                <div class="fg">
+                    <label class="fl">อายุ <span class="req">*</span></label>
+                    <input type="number" id="age" required min="1" max="120" placeholder="25">
+                </div>
+                <div class="fg">
+                    <label class="fl">สัญชาติ</label>
+                    <input type="text" id="nationality" placeholder="ไทย">
+                </div>
+            </div>
+            <div class="fg">
+                <label class="fl">เพศ <span class="req">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-opt">
+                        <input type="radio" name="gender" value="ชาย" checked> ชาย
+                    </label>
+                    <label class="radio-opt">
+                        <input type="radio" name="gender" value="หญิง"> หญิง
+                    </label>
+                    <label class="radio-opt">
+                        <input type="radio" name="gender" value="อื่นๆ"> อื่นๆ
+                    </label>
+                </div>
+            </div>
+            <div class="fg">
+                <label class="fl">เบอร์โทรติดต่อ <span class="req">*</span></label>
+                <input type="tel" id="phone" required placeholder="0812345678"
+                    pattern="0[0-9]{9}" title="กรุณากรอก 10 หลัก เริ่มต้นด้วย 0">
+            </div>
+            <div class="fg">
+                <label class="fl">อีเมล (สำหรับรับ E-Ticket) <span class="req">*</span></label>
+                <input type="email" id="email" required placeholder="example@gmail.com">
+            </div>
+            <div class="fg-row">
+                <div class="fg">
+                    <label class="fl">จังหวัดที่อาศัย <span class="req">*</span></label>
+                    <input type="text" id="province" required placeholder="เชียงใหม่">
+                </div>
+            </div>
+            <div class="fg" style="margin-top:2px;">
+                    <label class="fl">โรคประจำตัว</label>
+                    <input type="text" id="medicalCondition" placeholder="กรณีไม่มีข้อมูล โปรดระบุ 'ไม่มี'">
+            </div>
+
+            <div class="sub-divider">บุคคลติดต่อฉุกเฉิน</div>
+            <div class="fg">
+                <label class="fl">ชื่อ-นามสกุล (ผู้ติดต่อฉุกเฉิน) <span class="req">*</span></label>
+                <input type="text" id="emergencyName" required placeholder="ชื่อ-นามสกุล">
+            </div>
+            <div class="fg-row">
+                <div class="fg">
+                    <label class="fl">ความสัมพันธ์ <span class="req">*</span></label>
+                    <input type="text" id="emergencyRelation" required placeholder="บิดา / มารดา / เพื่อน">
+                </div>
+                <div class="fg">
+                    <label class="fl">เบอร์โทร <span class="req">*</span></label>
+                    <input type="tel" id="emergencyPhone" required placeholder="0812345678"
+                        pattern="0[0-9]{9}" title="กรุณากรอก 10 หลัก เริ่มต้นด้วย 0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ② รูปแบบและการเดินทาง -->
+    <div class="sec-card">
+        <div class="sec-header">
+            <div class="sec-num">2</div>
+            <h2>รูปแบบและการเดินทาง</h2>
+        </div>
+        <div class="sec-body">
+            <div class="fg">
+                <label class="fl">รูปแบบการเข้าชม <span class="req">*</span></label>
+                <select id="visitType" required>
+                    <option value="" disabled selected>-- เลือกรูปแบบ --</option>
+                    <option value="ไป-กลับ">ไป-กลับ</option>
+                    <option value="พักค้างคืน">พักค้างคืน (ติดต่อที่พักในชุมชนด้วยตนเอง)</option>
+                </select>
+            </div>
+            <div class="fg">
+                <label class="fl">วันเข้าชม <span class="req">*</span></label>
+                <input type="text" id="visitDate" required placeholder="เลือกวันเข้าชม" readonly style="cursor:pointer;background:white;width:100%;padding:10px 12px;border:1.5px solid #d0e8df;border-radius:8px;font-family:'Prompt';font-size:0.95em;color:#333;">
+            </div>
+            <div class="fg">
+                <label class="fl">วันที่เดินทางมาถึงบ้านแม่โขง</label>
+                <input type="text" id="arrivalDate" placeholder="เลือกวันที่เดินทาง" readonly style="cursor:pointer;background:white;width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.95em;color:#333;">
+            </div>
+        </div>
+    </div>
+
+    <!-- ③ จำนวนคนและสถานที่ -->
+    <div class="sec-card">
+        <div class="sec-header">
+            <div class="sec-num">3</div>
+            <h2>จำนวนคนและสถานที่เข้าชม</h2>
+        </div>
+        <div class="sec-body">
+            <div class="ticket-area">
+                <div class="ticket-area-title">น้ำตกห้วยน้ำเย็น (ระบุจำนวนคน)</div>
+
+                <div class="ticket-row">
+                    <div class="ticket-info">
+                        <div class="tl">คนในพื้นที่อมก๋อย</div>
+                        <div class="tp">20 บาท / คน</div>
+                    </div>
+                    <div class="qty-wrap">
+                        <button type="button" class="qty-btn" onclick="changeQty('wf_local',-1)">−</button>
+                        <input type="number" class="qty-input" id="wf_local" value="0" min="0" onchange="calcTotal()">
+                        <button type="button" class="qty-btn" onclick="changeQty('wf_local',1)">+</button>
+                    </div>
+                </div>
+                <div class="ticket-row">
+                    <div class="ticket-info">
+                        <div class="tl">คนไทยนอกพื้นที่</div>
+                        <div class="tp">50 บาท / คน</div>
+                    </div>
+                    <div class="qty-wrap">
+                        <button type="button" class="qty-btn" onclick="changeQty('wf_thai',-1)">−</button>
+                        <input type="number" class="qty-input" id="wf_thai" value="0" min="0" onchange="calcTotal()">
+                        <button type="button" class="qty-btn" onclick="changeQty('wf_thai',1)">+</button>
+                    </div>
+                </div>
+                <div class="ticket-row">
+                    <div class="ticket-info">
+                        <div class="tl">ชาวต่างชาติ</div>
+                        <div class="tp">150 บาท / คน</div>
+                    </div>
+                    <div class="qty-wrap">
+                        <button type="button" class="qty-btn" onclick="changeQty('wf_foreign',-1)">−</button>
+                        <input type="number" class="qty-input" id="wf_foreign" value="0" min="0" onchange="calcTotal()">
+                        <button type="button" class="qty-btn" onclick="changeQty('wf_foreign',1)">+</button>
+                    </div>
+                </div>
+                <div class="ticket-row">
+                    <div class="ticket-info">
+                        <div class="tl">เด็ก (อายุต่ำกว่า 12 ปี)</div>
+                        <div class="tp" style="color:#27ae60;font-weight:600;">ฟรี</div>
+                    </div>
+                    <div class="qty-wrap">
+                        <button type="button" class="qty-btn" onclick="changeQty('wf_child',-1)">−</button>
+                        <input type="number" class="qty-input" id="wf_child" value="0" min="0" onchange="calcTotal()">
+                        <button type="button" class="qty-btn" onclick="changeQty('wf_child',1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ถ้ำ -->
+            <label class="cave-toggle">
+                <input type="checkbox" id="caveCheck" onchange="toggleCave()">
+                <div class="ct-label">ต้องการเข้าชม <strong>"ถ้ำเหมอะลาฮาว"</strong> เพิ่มเติม</div>
+            </label>
+
+            <div class="cave-tickets" id="caveTickets">
+                <div class="ticket-area">
+                    <div class="ticket-area-title">ถ้ำเหมอะลาฮาว (ระบุจำนวนคน)</div>
+                    <div class="ticket-row">
+                        <div class="ticket-info">
+                            <div class="tl">คนไทย</div>
+                            <div class="tp">20 บาท / คน</div>
+                        </div>
+                        <div class="qty-wrap">
+                            <button type="button" class="qty-btn" onclick="changeQty('cv_thai',-1)">−</button>
+                            <input type="number" class="qty-input" id="cv_thai" value="0" min="0" onchange="calcTotal()">
+                            <button type="button" class="qty-btn" onclick="changeQty('cv_thai',1)">+</button>
+                        </div>
+                    </div>
+                    <div class="ticket-row">
+                        <div class="ticket-info">
+                            <div class="tl">ชาวต่างชาติ</div>
+                            <div class="tp">50 บาท / คน</div>
+                        </div>
+                        <div class="qty-wrap">
+                            <button type="button" class="qty-btn" onclick="changeQty('cv_foreign',-1)">−</button>
+                            <input type="number" class="qty-input" id="cv_foreign" value="0" min="0" onchange="calcTotal()">
+                            <button type="button" class="qty-btn" onclick="changeQty('cv_foreign',1)">+</button>
+                        </div>
+                    </div>
+                    <div class="ticket-row">
+                        <div class="ticket-info">
+                            <div class="tl">เด็ก (อายุต่ำกว่า 12 ปี)</div>
+                            <div class="tp" style="color:#27ae60;font-weight:600;">ฟรี</div>
+                        </div>
+                        <div class="qty-wrap">
+                            <button type="button" class="qty-btn" onclick="changeQty('cv_child',-1)">−</button>
+                            <input type="number" class="qty-input" id="cv_child" value="0" min="0" onchange="calcTotal()">
+                            <button type="button" class="qty-btn" onclick="changeQty('cv_child',1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ④ การเดินทางและพาหนะ -->
+    <div class="sec-card">
+        <div class="sec-header">
+            <div class="sec-num">4</div>
+            <h2>การเดินทางและพาหนะ</h2>
+        </div>
+        <div class="sec-body">
+            <div class="fg">
+                <label class="fl">ยานพาหนะเดินทางถึงแม่โขง <span class="req">*</span></label>
+                <select id="vehicle" required>
+                    <option value="" disabled selected>-- เลือกยานพาหนะ --</option>
+                    <option value="เหมารถกระบะชาวบ้าน (4,000 บาท)">เหมารถกระบะชาวบ้าน (4,000 บาท)</option>
+                    <option value="จอยหน้างานรถกระบะชาวบ้าน — ค้างคืน (4,000 บาท)">จอยหน้างานรถกระบะชาวบ้าน — เฉพาะค้างคืน (4,000 บาท)</option>
+                    <option value="รถมอเตอร์ไซค์รับส่งจากชุมชน (1,000 บาท/คน)">รถมอเตอร์ไซค์รับส่งจากชุมชน (1,000 บาท/คน)</option>
+                    <option value="รถยนต์ส่วนตัวหรือรถยกสูง">รถยนต์ส่วนตัว(รถยกสูง))</option>
+                    <option value="รถมอเตอร์ไซค์ส่วนตัว (ต้องมีเกียร์)">รถมอเตอร์ไซค์ส่วนตัว (ต้องมีเกียร์)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- ราคารวม -->
+    <div class="price-box" id="priceBox">
+        <div class="pb-row"><span>ค่าเข้าชมน้ำตก</span><span id="priceWaterfall">0 บาท</span></div>
+        <div class="pb-row" id="rowCave"><span>ค่าเข้าชมถ้ำ</span><span id="priceCave">0 บาท</span></div>
+        <div class="pb-row total"><span>ยอดชำระรวมทั้งสิ้น</span><span id="priceTotal">0 บาท</span></div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitForm()">
+        บันทึกข้อมูลและไปหน้าชำระเงิน
+    </button>
+
+</div>
+
+<script>
+    function handleMedicalChange(el) {
+        const all = document.querySelectorAll('input[name="medical"]');
+        const noneBox = document.querySelector('input[name="medical"][value="ไม่มี"]');
+        if (el.value === 'ไม่มี') {
+            if (el.checked) all.forEach(c => { if (c !== el) c.checked = false; });
+        } else {
+            if (el.checked) noneBox.checked = false;
+            const anyChecked = Array.from(all).some(c => c.value !== 'ไม่มี' && c.checked);
+            if (!anyChecked) noneBox.checked = true;
+        }
+        const checked = Array.from(all).filter(c => c.checked).map(c => c.value);
+        document.getElementById('medicalCondition').value = checked.join(', ') || 'ไม่มี';
+    }
+</script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import {
+        initializeFirestore, collection, doc, getDoc, query, where, getDocs,
+        runTransaction, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    const firebaseConfig = {
+        apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4",
+        authDomain:"maekhong-waterfall-51445.firebaseapp.com",
+        projectId:"maekhong-waterfall-51445",
+        storageBucket:"maekhong-waterfall-51445.firebasestorage.app",
+        messagingSenderId:"40565650481",
+        appId:"1:40565650481:web:9cf6a76cb388c61ea05110"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+    const QUOTA = 150;
+
+    // ─── Pre-fill date from URL ───
+    const urlParams = new URLSearchParams(window.location.search);
+    const preDate = urlParams.get('date');
+
+    flatpickr('#arrivalDate', {
+        dateFormat: 'Y-m-d',
+        locale: 'th',
+    });
+
+    const _minVisit = new Date();
+    _minVisit.setDate(_minVisit.getDate() + 3);
+
+    flatpickr('#visitDate', {
+        dateFormat: 'Y-m-d',
+        minDate: _minVisit,
+        maxDate: '2026-10-31',
+        locale: 'th',
+        disable: [function(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth()+1).padStart(2,'0');
+            const d = String(date.getDate()).padStart(2,'0');
+            if (`${y}-${m}-${d}` === '2026-07-29') return false;
+            return date.getDay() === 3;
+        }],
+        defaultDate: preDate || null,
+        onChange: function(selectedDates, dateStr) {
+            if (dateStr) loadQuota(dateStr);
+        }
+    });
+
+    // ─── Quota check ───
+    async function loadQuota(date) {
+        if (!date) return;
+        const snap = await getDoc(doc(db, "daily_quota", date));
+        const used = snap.exists() ? (snap.data().count || 0) : 0;
+        const remaining = QUOTA - used;
+        const pct = Math.min((used / QUOTA) * 100, 100);
+        const fillColor = remaining <= 0 ? '#e74c3c' : remaining <= 30 ? '#e67e22' : '#67A792';
+        document.getElementById('quotaFill').style.width = pct + '%';
+        document.getElementById('quotaFill').style.background = fillColor;
+        if (remaining <= 0) {
+            document.getElementById('quotaText').textContent = `🔴 วันที่ ${date} — คิวออนไลน์เต็มแล้ว`;
+            document.getElementById('quotaText').style.color = '#c0392b';
+        } else {
+            document.getElementById('quotaText').textContent = `${remaining <= 30 ? '🟡' : '🟢'} วันที่ ${date} — ว่างอีก ${remaining} ท่าน (${used}/${QUOTA})`;
+            document.getElementById('quotaText').style.color = remaining <= 30 ? '#9a7d0a' : '#1e8449';
+        }
+        return used;
+    }
+
+    if (preDate) loadQuota(preDate);
+
+    // ─── Qty controls ───
+    window.changeQty = function(id, delta) {
+        const el = document.getElementById(id);
+        el.value = Math.max(0, (parseInt(el.value) || 0) + delta);
+        calcTotal();
+    }
+
+    window.toggleCave = function() {
+        const show = document.getElementById('caveCheck').checked;
+        document.getElementById('caveTickets').classList.toggle('show', show);
+        if (!show) {
+            document.getElementById('cv_thai').value = 0;
+            document.getElementById('cv_foreign').value = 0;
+        }
+        calcTotal();
+    }
+
+    window.calcTotal = function() {
+        const wfLocal   = parseInt(document.getElementById('wf_local').value)   || 0;
+        const wfThai    = parseInt(document.getElementById('wf_thai').value)     || 0;
+        const wfForeign = parseInt(document.getElementById('wf_foreign').value)  || 0;
+        const wfChild   = parseInt(document.getElementById('wf_child').value)   || 0;
+        const cvThai    = parseInt(document.getElementById('cv_thai').value)     || 0;
+        const cvForeign = parseInt(document.getElementById('cv_foreign').value)  || 0;
+        const cvChild   = parseInt(document.getElementById('cv_child').value)   || 0;
+
+        const wfTotal = (wfLocal * 20) + (wfThai * 50) + (wfForeign * 150);
+        const cvTotal = (cvThai * 20) + (cvForeign * 50);
+        const grandTotal = wfTotal + cvTotal;
+
+        document.getElementById('priceCave').textContent      = cvTotal.toLocaleString()  + ' บาท';
+        document.getElementById('priceWaterfall').textContent = wfTotal.toLocaleString() + ' บาท';
+        document.getElementById('priceTotal').textContent     = grandTotal.toLocaleString() + ' บาท';
+
+        const showCave = document.getElementById('caveCheck').checked;
+        document.getElementById('rowCave').style.display = showCave ? 'flex' : 'none';
+    }
+
+    function isBlockedDate(dateStr) {
+        if (!dateStr) return false;
+        if (dateStr === '2026-07-29') return false;
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.getDay() === 3;
+    }
+
+    // ─── Submit ───
+    window.submitForm = async function() {
+        // Block Wednesdays
+        const visitDateVal = document.getElementById('visitDate').value;
+        if (visitDateVal && isBlockedDate(visitDateVal)) {
+            alert('ไม่สามารถจองวันพุธได้ครับ กรุณาเลือกวันอื่น');
+            return;
+        }
+        // Validate required fields
+        const required = [
+            {id:'fullName', label:'ชื่อ-นามสกุล'},
+            {id:'age', label:'อายุ'},
+            {id:'nationality', label:'สัญชาติ'},
+            {id:'phone', label:'เบอร์โทรติดต่อ'},
+            {id:'email', label:'อีเมล'},
+            {id:'province', label:'จังหวัดที่อาศัย'},
+            {id:'medicalCondition', label:'โรคประจำตัว'},
+            {id:'emergencyName', label:'ชื่อผู้ติดต่อฉุกเฉิน'},
+            {id:'emergencyRelation', label:'ความสัมพันธ์'},
+            {id:'emergencyPhone', label:'เบอร์โทรฉุกเฉิน'},
+            {id:'visitType', label:'รูปแบบการเข้าชม'},
+            {id:'visitDate', label:'วันเข้าชม'},
+            {id:'arrivalDate', label:'วันที่เดินทางมาถึงบ้านแม่โขง'},
+            {id:'vehicle', label:'ยานพาหนะ'},
+        ];
+        for (const f of required) {
+            const el = document.getElementById(f.id);
+            if (!el.value.trim()) { el.focus(); alert(`กรุณากรอก: ${f.label}`); return; }
+            if (!el.checkValidity()) { el.reportValidity(); return; }
+        }
+
+        const wfLocal   = parseInt(document.getElementById('wf_local').value)   || 0;
+        const wfThai    = parseInt(document.getElementById('wf_thai').value)     || 0;
+        const wfForeign = parseInt(document.getElementById('wf_foreign').value)  || 0;
+        const wfChild   = parseInt(document.getElementById('wf_child').value)   || 0;
+        const totalPeopleCount = wfLocal + wfThai + wfForeign + wfChild;
+        if (totalPeopleCount <= 0) { alert('กรุณาระบุจำนวนคนที่ต้องการเข้าชมน้ำตกอย่างน้อย 1 คน'); return; }
+
+        const cvThai    = parseInt(document.getElementById('cv_thai').value)    || 0;
+        const cvForeign = parseInt(document.getElementById('cv_foreign').value) || 0;
+        const cvChild   = parseInt(document.getElementById('cv_child').value)  || 0;
+        const wfTotal   = (wfLocal * 20) + (wfThai * 50) + (wfForeign * 150);
+        const cvTotal   = (cvThai * 20) + (cvForeign * 50);
+        const totalAmount = wfTotal + cvTotal;
+
+        const gender = document.querySelector('input[name="gender"]:checked')?.value || 'ชาย';
+        const selectedDate = document.getElementById('visitDate').value;
+        const arrivalDateVal = document.getElementById('arrivalDate').value;
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.textContent = 'กำลังตรวจสอบโควตา...';
+
+        try {
+            const bookingId = 'HNY-' + Date.now().toString(36).toUpperCase();
+            const quotaRef  = doc(db, "daily_quota", selectedDate);
+            const newDocRef = doc(collection(db, "registrations"));
+
+            await runTransaction(db, async (transaction) => {
+                const quotaDoc = await transaction.get(quotaRef);
+                const currentCount = quotaDoc.exists() ? (quotaDoc.data().count || 0) : 0;
+                if (currentCount + totalPeopleCount > QUOTA) {
+                    throw new Error(`โควตาไม่พอ เหลือเพียง ${QUOTA - currentCount} ที่นั่ง`);
+                }
+                transaction.set(quotaRef, { count: currentCount + totalPeopleCount }, { merge: true });
+                transaction.set(newDocRef, {
+                    bookingId,
+                    fullName:          document.getElementById('fullName').value.trim(),
+                    age:               parseInt(document.getElementById('age').value),
+                    gender,
+                    nationality:       document.getElementById('nationality').value.trim(),
+                    phone:             document.getElementById('phone').value.trim(),
+                    email:             document.getElementById('email').value.trim(),
+                    province:          document.getElementById('province').value.trim(),
+                    medicalCondition:  document.getElementById('medicalCondition').value.trim(),
+                    emergencyName:     document.getElementById('emergencyName').value.trim(),
+                    emergencyRelation: document.getElementById('emergencyRelation').value.trim(),
+                    emergencyPhone:    document.getElementById('emergencyPhone').value.trim(),
+                    visitType:         document.getElementById('visitType').value,
+                    visitDate:         selectedDate,
+                    arrivalDate:       arrivalDateVal || '',
+                    vehicle:           document.getElementById('vehicle').value,
+                    wantCave:          document.getElementById('caveCheck').checked,
+                    totalPeopleCount,
+                    totalAmount,
+                    tickets: {
+                        waterfall: { local: wfLocal, thai: wfThai, foreign: wfForeign, child: wfChild },
+                        cave:      { thai: cvThai, foreign: cvForeign, child: cvChild }
+                    },
+                    slipImageUrl: null,
+                    status: "รอชำระเงิน",
+                    timestamp: serverTimestamp()
+                });
+            });
+
+            const p = new URLSearchParams({
+                bookingId,
+                docId: newDocRef.id,
+                amount: totalAmount,
+                name:      document.getElementById('fullName').value.trim(),
+                date:      selectedDate,
+                arrivalDate: arrivalDateVal || '',
+                visitType: document.getElementById('visitType').value,
+                vehicle:   document.getElementById('vehicle').value,
+                wfLocal, wfThai, wfForeign, wfChild,
+                cvThai, cvForeign, cvChild,
+                wantCave:  document.getElementById('caveCheck').checked ? '1' : '0',
+            });
+            window.location.href = `payment.html?${p.toString()}`;
+
+        } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            btn.textContent = 'บันทึกข้อมูลและไปหน้าชำระเงิน';
+            alert(err.message?.includes('โควตาไม่พอ') ? '⚠️ ' + err.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+        }
+    }
+
+    // init
+    calcTotal();
+</script>
+</body>
+</html>

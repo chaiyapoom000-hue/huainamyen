@@ -1,0 +1,1244 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - น้ำตกห้วยน้ำเย็น</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>emailjs.init('UUmrjF_w_fAnkc8vv');</script>
+    <style>
+        :root { --dark-green:#0A4B33; --mint-green:#67A792; --gold:#cc8e35; --bg:#F0EBE0; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Prompt',sans-serif; background:#f5f6fa; }
+
+        /* ══ LOGIN ══ */
+        #loginScreen {
+            min-height:100vh; background:var(--bg);
+            display:flex; align-items:center; justify-content:center; padding:24px;
+        }
+        .login-page-header {
+            position:relative; width:100%; max-width:420px;
+            height:180px; border-radius:16px 16px 0 0; overflow:hidden;
+            display:flex; align-items:flex-end; padding:0 28px 22px;
+        }
+        .login-page-bg {
+            position:absolute; inset:0;
+            background-image:url('195737.jpg');
+            background-size:cover; background-position:center 40%; z-index:0;
+        }
+        .login-page-overlay {
+            position:absolute; inset:0;
+            background:linear-gradient(to bottom,rgba(10,75,51,0.35) 0%,rgba(5,30,18,0.90) 100%);
+            z-index:1;
+        }
+        .login-page-title { position:relative; z-index:2; color:white; }
+        .login-page-title .badge { font-family:'Kanit'; font-size:0.68rem; letter-spacing:3px; text-transform:uppercase; color:var(--mint-green); margin-bottom:3px; }
+        .login-page-title h2 { font-family:'Kanit'; font-size:1.5rem; font-weight:700; text-shadow:0 2px 8px rgba(0,0,0,0.4); }
+
+        .login-body {
+            background:white; border-radius:0 0 16px 16px;
+            padding:28px 28px 32px;
+            box-shadow:0 8px 32px rgba(10,75,51,0.12);
+            max-width:420px; width:100%;
+        }
+        .login-wrap { max-width:420px; width:100%; }
+        .login-form-group { margin-bottom:14px; }
+        .login-form-group label { display:block; font-size:0.82em; font-weight:600; color:#555; margin-bottom:5px; }
+        .login-form-group input {
+            width:100%; padding:11px 13px; border:1.5px solid #e0e0e0;
+            border-radius:8px; font-family:'Prompt'; font-size:0.93em; background:#fafafa; transition:border-color 0.2s;
+        }
+        .login-form-group input:focus { outline:none; border-color:var(--mint-green); background:white; }
+        .btn-login { width:100%; padding:13px; background:var(--dark-green); color:white; border:none; border-radius:8px; font-family:'Kanit'; font-size:1em; font-weight:600; cursor:pointer; transition:0.2s; margin-top:4px; }
+        .btn-login:hover { background:#063222; }
+        .btn-login:disabled { background:#aaa; cursor:not-allowed; }
+        .login-error { color:#e74c3c; font-size:0.83em; margin-top:10px; min-height:18px; }
+
+        /* ══ ADMIN PANEL ══ */
+        #adminPanel { display:none; }
+
+        .topbar {
+            position:fixed; top:0; left:0; right:0; height:56px;
+            background:white; border-bottom:1px solid #eee;
+            display:flex; align-items:center; padding:0 20px; gap:12px;
+            z-index:200; box-shadow:0 1px 4px rgba(0,0,0,0.05);
+        }
+        .topbar-logo { width:32px; height:32px; background:var(--dark-green); border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:1em; }
+        .topbar-title { font-family:'Kanit'; font-size:1rem; color:var(--dark-green); font-weight:600; flex:1; }
+        .topbar-email { font-size:0.78em; color:#888; }
+        .btn-logout { padding:6px 14px; border:1.5px solid #ddd; border-radius:6px; background:white; color:#666; font-family:'Prompt'; font-size:0.8em; cursor:pointer; transition:0.2s; }
+        .btn-logout:hover { border-color:#e74c3c; color:#e74c3c; }
+
+        .main-content { padding:72px 20px 40px; max-width:1200px; margin:0 auto; }
+
+        /* Dashboard header banner */
+        .dash-banner {
+            position:relative; border-radius:16px; overflow:hidden;
+            height:130px; margin-bottom:20px;
+            display:flex; align-items:center; padding:0 28px;
+        }
+        .dash-banner-bg {
+            position:absolute; inset:0;
+            background-image:url('195737.jpg');
+            background-size:cover; background-position:center 30%; z-index:0;
+        }
+        .dash-banner-overlay { position:absolute; inset:0; background:linear-gradient(90deg,rgba(5,30,18,0.88) 0%,rgba(10,75,51,0.5) 100%); z-index:1; }
+        .dash-banner-content { position:relative; z-index:2; color:white; }
+        .dash-banner-content .badge { font-family:'Kanit'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase; color:var(--mint-green); margin-bottom:4px; }
+        .dash-banner-content h2 { font-family:'Kanit'; font-size:1.5rem; font-weight:700; }
+
+        .summary-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:20px; }
+        .stat-card { background:white; border-radius:12px; padding:16px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+        .sc-label { font-size:0.73em; color:#999; margin-bottom:3px; }
+        .sc-value { font-family:'Kanit'; font-size:1.7em; color:var(--dark-green); font-weight:700; line-height:1; margin-bottom:3px; }
+        .sc-sub { font-size:0.72em; color:#aaa; }
+
+        .qr-manage-card {
+            background:white; border-radius:12px; padding:16px 20px;
+            margin:0 0 16px; box-shadow:0 2px 10px rgba(10,75,51,0.07);
+        }
+        .qr-manage-title { font-family:'Kanit'; color:var(--dark-green); font-size:0.95rem; font-weight:700; margin-bottom:12px; }
+        .qr-manage-body { display:flex; align-items:flex-start; gap:20px; flex-wrap:wrap; }
+        .qr-current-wrap { display:flex; flex-direction:column; gap:6px; }
+        .qr-current-label { font-size:0.78em; color:#888; }
+        .qr-current-wrap img { width:120px; height:120px; object-fit:contain; border-radius:8px; border:1px solid #e0e0e0; }
+        .qr-no-img { width:120px; height:120px; border:2px dashed #ddd; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.78em; color:#bbb; text-align:center; padding:8px; }
+        .qr-upload-wrap { display:flex; flex-direction:column; gap:8px; justify-content:center; }
+        .qr-upload-btn {
+            display:inline-block; padding:9px 18px; background:var(--dark-green); color:white;
+            border-radius:8px; font-family:'Kanit'; font-size:0.88em; font-weight:600; cursor:pointer; transition:0.2s;
+        }
+        .qr-upload-btn:hover { background:#063222; }
+        .qr-delete-btn {
+            padding:9px 18px; background:white; color:#e74c3c;
+            border:1.5px solid #e74c3c; border-radius:8px;
+            font-family:'Kanit'; font-size:0.88em; font-weight:600; cursor:pointer; transition:0.2s;
+        }
+        .qr-delete-btn:hover { background:#fdedec; }
+
+        .filter-bar {
+            background:white; border-radius:12px; padding:14px 16px;
+            margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.05);
+            display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;
+        }
+        .fg { display:flex; flex-direction:column; gap:3px; }
+        .fg label { font-size:0.73em; color:#888; font-weight:600; }
+        .filter-bar input[type="date"], .filter-bar select {
+            padding:7px 10px; border:1.5px solid #e0e0e0; border-radius:7px;
+            font-family:'Prompt'; font-size:0.83em; background:#fafafa;
+        }
+        .filter-bar input:focus,.filter-bar select:focus { outline:none; border-color:var(--mint-green); }
+        .btn-filter { padding:7px 14px; border-radius:7px; border:none; font-family:'Prompt'; font-size:0.83em; font-weight:600; cursor:pointer; transition:0.2s; align-self:flex-end; }
+        .btn-apply { background:var(--dark-green); color:white; }
+        .btn-apply:hover { background:#063222; }
+        .btn-clear { background:#f0f0f0; color:#555; }
+        .btn-clear:hover { background:#e0e0e0; }
+        .btn-export { background:#2980b9; color:white; }
+        .btn-export:hover { background:#1f639a; }
+        .btn-refresh { background:#1e8449; color:white; }
+        .btn-refresh:hover { background:#145a32; }
+        .filter-count { font-size:0.8em; color:#888; align-self:center; margin-left:auto; }
+
+        .table-wrap { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.05); overflow:hidden; }
+        .table-scroll { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; min-width:700px; }
+        thead tr { background:var(--dark-green); color:white; }
+        thead th { padding:12px 13px; text-align:left; font-family:'Kanit'; font-size:0.8em; font-weight:500; letter-spacing:0.5px; white-space:nowrap; }
+        tbody tr { border-bottom:1px solid #f0f0f0; transition:background 0.15s; cursor:pointer; }
+        tbody tr:hover { background:#f7fbf9; }
+        tbody tr:last-child { border-bottom:none; }
+        td { padding:10px 13px; font-size:0.83em; vertical-align:middle; }
+        td.bid { font-family:'Kanit'; color:var(--dark-green); font-size:0.78em; }
+        .status-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.76em; font-weight:600; white-space:nowrap; }
+        .s-pending   { background:#fef9e7; color:#9a7d0a; }
+        .s-approved  { background:#eafaf1; color:#1e8449; }
+        .s-rejected  { background:#fdedec; color:#c0392b; }
+        .s-cancelled { background:#f0f0f0; color:#777; }
+        .s-contacted { background:#eaf4fb; color:#1a6a9a; }
+        .s-waiting   { background:#f0f4ff; color:#5b6fa6; }
+        .table-empty { text-align:center; padding:36px; color:#aaa; font-size:0.88em; }
+
+        /* Calendar modal */
+        .cal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:300; align-items:center; justify-content:center; padding:16px; }
+        .cal-overlay.open { display:flex; }
+        .cal-box { background:white; border-radius:16px; width:100%; max-width:680px; max-height:90vh; overflow-y:auto; padding:20px; }
+        .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+        .cal-header h3 { font-family:'Kanit'; color:var(--dark-green); font-size:1.05em; }
+        .cal-close { width:30px; height:30px; border-radius:50%; border:none; background:#f0f0f0; cursor:pointer; font-size:0.9em; }
+        .cal-month-nav { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .cal-month-title { font-family:'Kanit'; font-size:0.95em; color:var(--dark-green); font-weight:700; flex:1; text-align:center; }
+        .cal-nav-btn { width:28px; height:28px; border-radius:50%; border:1.5px solid #ddd; background:white; cursor:pointer; font-size:0.85em; }
+        .cal-nav-btn:hover { background:#f0f0f0; }
+        .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+        .cal-day-name { text-align:center; font-size:0.72em; font-family:'Kanit'; color:#aaa; padding-bottom:4px; }
+        .cal-day { border-radius:10px; padding:8px 4px; text-align:center; min-height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:0.78em; transition:0.2s; }
+        .cal-day.empty { background:transparent; }
+        .cal-day.blocked { background:#f5f5f5; color:#ccc; }
+        .cal-day.free    { background:#eafaf1; color:#1e8449; }
+        .cal-day.low     { background:#fef9e7; color:#9a7d0a; }
+        .cal-day.warn    { background:#fdebd0; color:#d35400; }
+        .cal-day.full    { background:#fdedec; color:#c0392b; }
+        .cal-day.today   { outline:2px solid var(--mint-green); }
+        .cal-day .cd-date { font-family:'Kanit'; font-size:1em; font-weight:700; }
+        .cal-day .cd-count { font-size:0.82em; }
+        .cal-day .cd-bar { width:80%; height:4px; border-radius:99px; background:rgba(0,0,0,0.08); margin-top:2px; overflow:hidden; }
+        .cal-day .cd-bar-fill { height:100%; border-radius:99px; }
+        .cal-legend { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:0.75em; }
+        .cal-legend span { display:flex; align-items:center; gap:4px; }
+        .cal-legend .dot { width:10px; height:10px; border-radius:50%; }
+
+        /* Slip lightbox */
+        .slip-lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; align-items:center; justify-content:center; cursor:zoom-out; }
+        .slip-lightbox.open { display:flex; }
+        .slip-lightbox img { max-width:92vw; max-height:92vh; border-radius:8px; object-fit:contain; }
+
+        /* Modal */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:500; align-items:center; justify-content:center; padding:20px; }
+        .modal-overlay.open { display:flex; }
+        .modal { background:white; border-radius:16px; max-width:560px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 16px 48px rgba(0,0,0,0.2); }
+        .modal-header {
+            padding:18px 22px 14px; border-bottom:1px solid #f0f0f0;
+            display:flex; justify-content:space-between; align-items:center;
+            position:sticky; top:0; background:white; z-index:1;
+        }
+        .modal-header h3 { font-family:'Kanit'; color:var(--dark-green); font-size:1.05rem; }
+        .modal-close { width:30px; height:30px; border-radius:50%; border:none; background:#f0f0f0; cursor:pointer; font-size:0.9em; display:flex; align-items:center; justify-content:center; }
+        .modal-close:hover { background:#e0e0e0; }
+        .modal-body { padding:18px 22px 22px; }
+        .modal-bid { background:#f7fbf9; border-radius:8px; padding:9px 13px; font-family:'Kanit'; font-size:1.05em; color:var(--dark-green); font-weight:700; letter-spacing:1px; text-align:center; margin-bottom:14px; }
+        .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; margin-bottom:16px; }
+        .mf-label { font-size:0.72em; color:#999; margin-bottom:2px; }
+        .mf-value { font-size:0.88em; font-weight:600; color:#333; }
+        .mf-full { grid-column:1/-1; }
+        .slip-img { width:100%; border-radius:8px; margin-top:6px; max-height:220px; object-fit:contain; background:#f0f0f0; cursor:pointer; }
+        .modal-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; padding-top:14px; border-top:1px solid #f0f0f0; }
+        .btn-action { flex:1; padding:10px; border-radius:7px; border:none; font-family:'Kanit'; font-size:0.88em; font-weight:600; cursor:pointer; transition:0.2s; min-width:90px; }
+        .btn-approve { background:#eafaf1; color:#1e8449; }
+        .btn-approve:hover { background:#27ae60; color:white; }
+        .btn-reject { background:#fdedec; color:#c0392b; }
+        .btn-reject:hover { background:#e74c3c; color:white; }
+        .btn-delete { background:#f0f0f0; color:#666; }
+        .btn-delete:hover { background:#e0e0e0; }
+        .btn-note { background:#eaf4fb; color:#1a6a9a; }
+        .btn-note:hover { background:#2e86c1; color:white; }
+        .modal-note-wrap { display:flex; align-items:center; gap:6px; flex:1; margin-right:8px; }
+        .modal-note-input { flex:1; padding:5px 10px; border:1.5px solid #d0e8df; border-radius:20px; font-family:'Prompt'; font-size:0.82em; background:#f7fbf9; color:#333; outline:none; }
+        .modal-note-input:focus { border-color:var(--mint-green); }
+        .btn-save-note { padding:5px 12px; border-radius:20px; border:none; background:var(--mint-green); color:white; font-family:'Kanit'; font-size:0.78em; cursor:pointer; white-space:nowrap; }
+        .btn-save-note:hover { background:var(--dark-green); }
+        .status-change-form { background:#eaf4fb; border-radius:10px; padding:14px; margin-top:10px; border:1.5px solid #aed6f1; display:none; }
+        .status-change-form label { font-size:0.82em; color:#1a6a9a; font-weight:600; margin-bottom:6px; display:block; }
+        .btn-edit-date { background:#fef9e7; color:#9a7d0a; border:1.5px solid #f9e79f; }
+        .btn-edit-date:hover { background:#f9e79f; }
+        .admin-edited-badge { background:#fef9e7; border:1px solid #f9e79f; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:0.82em; color:#9a7d0a; font-weight:600; }
+        .admin-edited-badge .orig { font-weight:400; color:#aaa; font-size:0.9em; margin-top:3px; }
+        .edit-date-form { background:#f7fbf9; border-radius:10px; padding:14px; margin-bottom:12px; border:1.5px solid #d0e8df; }
+        .edit-date-form label { font-size:0.78em; color:#555; font-weight:600; display:block; margin-bottom:4px; margin-top:10px; }
+        .edit-date-form label:first-child { margin-top:0; }
+        .edit-date-form input { width:100%; padding:8px 10px; border:1.5px solid #d0e8df; border-radius:7px; font-family:'Prompt'; font-size:0.9em; }
+        .edit-date-form .save-row { display:flex; gap:8px; margin-top:12px; }
+        .btn-save-date { flex:1; padding:9px; background:var(--dark-green); color:white; border:none; border-radius:7px; font-family:'Kanit'; font-size:0.88em; font-weight:600; cursor:pointer; }
+        .btn-cancel-edit { padding:9px 14px; background:#f0f0f0; color:#666; border:none; border-radius:7px; font-family:'Kanit'; font-size:0.88em; cursor:pointer; }
+        .reject-form { background:#fdedec; border-radius:10px; padding:14px; margin-top:12px; border:1.5px solid #fadbd8; }
+        .reject-form .rf-title { font-family:'Kanit'; font-size:0.88em; color:#c0392b; margin-bottom:10px; font-weight:600; }
+        .reject-opt { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:7px; cursor:pointer; font-size:0.88em; margin-bottom:6px; border:1.5px solid #e0e0e0; background:white; }
+        .reject-opt:has(input:checked) { border-color:#e74c3c; background:#fff5f5; }
+        .reject-opt input[type="radio"] { accent-color:#e74c3c; }
+        .reject-custom { width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:7px;font-family:'Prompt';font-size:0.88em;margin-top:4px;margin-bottom:8px;display:none; }
+        .reject-form .rf-row { display:flex; gap:8px; margin-top:8px; }
+        .btn-confirm-reject { flex:1;padding:9px;background:#e74c3c;color:white;border:none;border-radius:7px;font-family:'Kanit';font-size:0.88em;font-weight:600;cursor:pointer; }
+        .btn-cancel-reject { padding:9px 14px;background:#f0f0f0;color:#666;border:none;border-radius:7px;font-family:'Kanit';font-size:0.88em;cursor:pointer; }
+
+        @media(max-width:600px) {
+            .summary-grid { grid-template-columns:1fr 1fr; }
+            .modal-grid { grid-template-columns:1fr; }
+            .filter-bar { flex-direction:column; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+    <div class="login-wrap">
+        <div class="login-page-header">
+            <div class="login-page-bg"></div>
+            <div class="login-page-overlay"></div>
+            <div class="login-page-title">
+                <div class="badge">Huai Nam Yen Waterfall</div>
+                <h2>Admin Dashboard</h2>
+            </div>
+        </div>
+        <div class="login-body">
+            <div class="login-form-group">
+                <label>อีเมล</label>
+                <input type="email" id="loginEmail" placeholder="admin@example.com">
+            </div>
+            <div class="login-form-group">
+                <label>รหัสผ่าน</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+            </div>
+            <button class="btn-login" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+    <div class="topbar">
+        <div class="topbar-logo">🌿</div>
+        <div class="topbar-title">HNY Admin</div>
+        <span class="topbar-email" id="adminEmail"></span>
+        <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
+    </div>
+
+    <div class="main-content">
+        <div class="dash-banner">
+            <div class="dash-banner-bg"></div>
+            <div class="dash-banner-overlay"></div>
+            <div class="dash-banner-content">
+                <div class="badge">ระบบจัดการ</div>
+                <h2>น้ำตกห้วยน้ำเย็น</h2>
+            </div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="stat-card"><div class="sc-label">การจองทั้งหมด</div><div class="sc-value" id="statTotal">—</div><div class="sc-sub">รายการ</div></div>
+            <div class="stat-card"><div class="sc-label">รอชำระเงิน</div><div class="sc-value" id="statWaiting" style="color:#5b6fa6">—</div><div class="sc-sub">รายการ</div></div>
+            <div class="stat-card"><div class="sc-label">รอตรวจสอบ</div><div class="sc-value" id="statPending" style="color:#9a7d0a">—</div><div class="sc-sub">รายการ</div></div>
+            <div class="stat-card">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div><div class="sc-label">อนุมัติแล้ว</div><div class="sc-value" id="statApproved" style="color:#1e8449">—</div><div class="sc-sub">รายการ</div></div>
+                    <a href="approved.html" style="padding:7px 16px;background:#eafaf1;color:#1e8449;border:1.5px solid #a9dfbf;border-radius:8px;font-family:'Kanit';font-size:0.85em;cursor:pointer;text-decoration:none;">ดูรายการ</a>
+                </div>
+            </div>
+            <div class="stat-card"><div class="sc-label">จำนวนคนทั้งหมด (อนุมัติแล้ว)</div><div class="sc-value" id="statApprovedPeople" style="color:#1e8449">—</div><div class="sc-sub">คน</div></div>
+            <div class="stat-card"><div class="sc-label">รายได้รวม</div><div class="sc-value" id="statRevenue" style="font-size:1.2em">—</div><div class="sc-sub">บาท (เฉพาะอนุมัติ)</div></div>
+            <div class="stat-card"><div class="sc-label">ผู้เข้าชมวันนี้</div><div class="sc-value" id="statToday">—</div><div class="sc-sub">/ 150 ท่าน</div></div>
+            <div class="stat-card">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div><div class="sc-label">แผนที่โควต้า</div><div class="sc-value" style="font-size:0.95em;color:var(--dark-green);">ก.ค. — ต.ค. 2569</div></div>
+                    <button onclick="openCalendar()" style="padding:7px 16px;background:#f7fbf9;color:var(--dark-green);border:1.5px solid #d0e8df;border-radius:8px;font-family:'Kanit';font-size:0.85em;cursor:pointer;">ดูแผนที่</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Account Management -->
+        <div class="summary-grid" style="margin-bottom:12px;">
+            <div class="stat-card" style="grid-column:span 2;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div><div class="sc-label">ข้อมูลบัญชีรับโอน</div><div class="sc-value" id="bankDisplayName" style="font-size:1em;color:var(--dark-green);">—</div></div>
+                    <button onclick="toggleBankForm()" id="bankToggleBtn" style="padding:7px 16px;background:#eaf4fb;color:#1a6a9a;border:1.5px solid #aed6f1;border-radius:8px;font-family:'Kanit';font-size:0.85em;cursor:pointer;">ตั้งค่า</button>
+                </div>
+                <div id="bankFormWrap" style="display:none;margin-top:14px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:0.78em;color:#888;display:block;margin-bottom:4px;">ธนาคาร</label>
+                            <input id="bankName" type="text" placeholder="เช่น กสิกรไทย" style="width:100%;padding:8px 10px;border:1.5px solid #d0e8df;border-radius:8px;font-family:'Prompt';font-size:0.9em;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.78em;color:#888;display:block;margin-bottom:4px;">ชื่อบัญชี</label>
+                            <input id="bankAccountName" type="text" placeholder="ชื่อเจ้าของบัญชี" style="width:100%;padding:8px 10px;border:1.5px solid #d0e8df;border-radius:8px;font-family:'Prompt';font-size:0.9em;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:0.78em;color:#888;display:block;margin-bottom:4px;">เลขบัญชี</label>
+                        <input id="bankAccountNumber" type="text" placeholder="000-0-00000-0" style="width:100%;padding:8px 10px;border:1.5px solid #d0e8df;border-radius:8px;font-family:'Prompt';font-size:0.9em;">
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <button onclick="saveBankInfo()" style="padding:9px 20px;background:var(--dark-green);color:white;border:none;border-radius:8px;font-family:'Kanit';font-size:0.88em;font-weight:600;cursor:pointer;">บันทึก</button>
+                        <span id="bankSaveStatus" style="font-size:0.82em;color:#888;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadError" style="display:none;background:#fdedec;color:#c0392b;padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:0.85em;"></div>
+
+        <div class="filter-bar">
+            <div class="fg"><label>หมายเลขจอง</label><input type="text" id="filterBookingId" placeholder="HNY-..." style="padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.83em;"></div>
+            <div class="fg"><label>ชื่อ</label><input type="text" id="filterName" placeholder="ชื่อ-นามสกุล" style="padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.83em;"></div>
+            <div class="fg"><label>อีเมล</label><input type="text" id="filterEmail" placeholder="email@..." style="padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.83em;"></div>
+            <div class="fg"><label>เบอร์โทร</label><input type="text" id="filterPhone" placeholder="08X..." style="padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.83em;"></div>
+            <div class="fg"><label>เดือนเข้าชม</label><select id="filterMonth" style="padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.83em;"><option value="">ทุกเดือน</option><option value="07">ก.ค. 2569</option><option value="08">ส.ค. 2569</option><option value="09">ก.ย. 2569</option><option value="10">ต.ค. 2569</option></select></div>
+            <div class="fg"><label>วันเข้าชม</label><input type="text" id="filterVisitDate" placeholder="เลือกวันที่" readonly style="padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.83em;cursor:pointer;background:white;"></div>
+            <div class="fg"><label>วันที่มาถึงบ้านแม่โขง</label><input type="text" id="filterArrivalDate" placeholder="เลือกวันที่" readonly style="padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.83em;cursor:pointer;background:white;"></div>
+            <div class="fg">
+                <label>สถานะ</label>
+                <select id="filterStatus">
+                    <option value="">ทุกสถานะ</option>
+                    <option value="รอชำระเงิน">รอชำระเงิน</option>
+                    <option value="รอแอดมินตรวจสอบ">รอตรวจสอบ</option>
+                    <option value="อยู่ระหว่างดำเนินการ">อยู่ระหว่างดำเนินการ</option>
+                    <option value="อนุมัติแล้ว">อนุมัติแล้ว</option>
+                    <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
+                    <option value="ยกเลิกโดยผู้จอง">ยกเลิกโดยผู้จอง</option>
+                </select>
+            </div>
+            <button class="btn-filter btn-apply" onclick="applyFilter()">กรอง</button>
+            <button class="btn-filter btn-clear" onclick="clearFilter()">ล้าง</button>
+            <button class="btn-filter btn-refresh" onclick="loadData()">↻ รีเฟรช</button>
+            <button class="btn-filter" style="background:#e8f4fd;color:#1a6a9a;" onclick="recalculateQuota()">⟳ คำนวณโควตาใหม่</button>
+            <button class="btn-filter btn-export" onclick="exportCSV()">⬇ ส่งออก CSV</button>
+            <span class="filter-count" id="filterCount"></span>
+        </div>
+
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th><th>ชื่อ</th><th>เบอร์</th>
+                            <th>วันที่เข้าชม</th><th>จำนวนคน</th><th>ยอด (฿)</th>
+                            <th>การเดินทาง</th><th>สถานะ</th><th>เวลาจอง</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="8" class="table-empty">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CALENDAR MODAL -->
+<div class="cal-overlay" id="calOverlay" onclick="if(event.target===this)closeCalendar()">
+    <div class="cal-box">
+        <div class="cal-header">
+            <h3>แผนที่โควต้ารายวัน</h3>
+            <button class="cal-close" onclick="closeCalendar()">✕</button>
+        </div>
+        <div class="cal-month-nav">
+            <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+            <div class="cal-month-title" id="calMonthTitle"></div>
+            <button class="cal-nav-btn" onclick="calNext()">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+            <span><div class="dot" style="background:#eafaf1;border:1px solid #a9dfbf;"></div> ว่าง</span>
+            <span><div class="dot" style="background:#fef9e7;border:1px solid #f9e79f;"></div> เริ่มเต็ม</span>
+            <span><div class="dot" style="background:#fdebd0;border:1px solid #f5cba7;"></div> เกือบเต็ม</span>
+            <span><div class="dot" style="background:#fdedec;border:1px solid #f5b7b1;"></div> เต็มแล้ว</span>
+        </div>
+    </div>
+</div>
+
+<!-- SLIP LIGHTBOX -->
+<div class="slip-lightbox" id="slipLightbox" onclick="document.getElementById('slipLightbox').classList.remove('open')">
+    <img id="slipLightboxImg" src="" alt="สลิป">
+</div>
+
+<!-- EMAIL PREVIEW MODAL -->
+<div class="modal-overlay" id="emailPreviewOverlay" onclick="if(event.target===this)closeEmailPreview()" style="z-index:600;">
+    <div style="background:white;border-radius:16px;max-width:520px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,0.25);">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #eee;position:sticky;top:0;background:white;z-index:1;border-radius:16px 16px 0 0;">
+            <span style="font-family:'Kanit';font-weight:700;font-size:0.95em;">รายละเอียดการจอง</span>
+            <div style="display:flex;gap:8px;">
+                <button onclick="saveEmailAsImage()" style="padding:6px 14px;background:#27ae60;color:white;border:none;border-radius:7px;font-family:'Kanit';font-size:0.82em;cursor:pointer;">⬇ บันทึกรูป</button>
+                <button onclick="closeEmailPreview()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:#888;">✕</button>
+            </div>
+        </div>
+        <div style="padding:16px 18px 24px;">
+            <div id="emailPreviewContent"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal" id="modal">
+        <div class="modal-header">
+            <h3>รายละเอียดการจอง</h3>
+            <div class="modal-note-wrap">
+                <input type="text" class="modal-note-input" id="adminNoteInput" placeholder="โน้ตแอดมิน...">
+                <button class="btn-save-note" onclick="saveAdminNote()">บันทึก</button>
+            </div>
+            <button class="modal-close" onclick="closeModalDirect()">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const PROJECT_ID = 'maekhong-waterfall-51445';
+    const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+
+    const firebaseConfig = { apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4", authDomain:"maekhong-waterfall-51445.firebaseapp.com", projectId:"maekhong-waterfall-51445", storageBucket:"maekhong-waterfall-51445.firebasestorage.app", messagingSenderId:"40565650481", appId:"1:40565650481:web:9cf6a76cb388c61ea05110" };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    let currentUser = null;
+
+    // ── Firestore REST helpers ──
+    function parseValue(v) {
+        if (!v) return null;
+        if ('stringValue'    in v) return v.stringValue;
+        if ('integerValue'   in v) return parseInt(v.integerValue);
+        if ('doubleValue'    in v) return v.doubleValue;
+        if ('booleanValue'   in v) return v.booleanValue;
+        if ('nullValue'      in v) return null;
+        if ('timestampValue' in v) { const d=new Date(v.timestampValue); return { toDate:()=>d, seconds:Math.floor(d.getTime()/1000) }; }
+        if ('mapValue'       in v) return parseFields(v.mapValue.fields||{});
+        if ('arrayValue'     in v) return (v.arrayValue.values||[]).map(parseValue);
+        return null;
+    }
+    function parseFields(fields) { const o={}; for(const[k,v] of Object.entries(fields||{})) o[k]=parseValue(v); return o; }
+    function toValue(val) {
+        if (val===null||val===undefined) return {nullValue:null};
+        if (typeof val==='string')  return {stringValue:val};
+        if (typeof val==='number')  return Number.isInteger(val)?{integerValue:String(val)}:{doubleValue:val};
+        if (typeof val==='boolean') return {booleanValue:val};
+        if (Array.isArray(val))     return {arrayValue:{values:val.map(toValue)}};
+        if (typeof val==='object')  { const f={}; for(const[k,v] of Object.entries(val)) f[k]=toValue(v); return {mapValue:{fields:f}}; }
+        return {stringValue:String(val)};
+    }
+    async function getToken() { return await currentUser.getIdToken(); }
+    async function fsList(col) {
+        const token = await getToken();
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ structuredQuery: { from: [{ collectionId: col }] } })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rows = await res.json();
+        return rows.filter(r=>r.document).map(r=>({ id:r.document.name.split('/').pop(), ...parseFields(r.document.fields) }));
+    }
+    async function fsGet(col, docId) {
+        const token = await getToken();
+        const res = await fetch(`${FS_BASE}/${col}/${docId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.status===404) return null;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        return parseFields(data.fields);
+    }
+    async function fsPatch(col, docId, data) {
+        const token = await getToken();
+        const fields = {};
+        const mask = Object.keys(data).map(k=>{ fields[k]=toValue(data[k]); return `updateMask.fieldPaths=${encodeURIComponent(k)}`; }).join('&');
+        const res = await fetch(`${FS_BASE}/${col}/${docId}?${mask}`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields })
+        });
+        if (!res.ok) throw new Error(await res.text());
+    }
+    async function fsDelete(col, docId) {
+        const token = await getToken();
+        const res = await fetch(`${FS_BASE}/${col}/${docId}`, { method:'DELETE', headers:{ 'Authorization':`Bearer ${token}` } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }
+
+    let allData = [], filteredData = [], currentDocId = null;
+
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        if (user) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminEmail').textContent = user.email;
+            loadData();
+            loadBankInfo();
+            flatpickr('#filterVisitDate',   { dateFormat:'Y-m-d', locale:'th', allowInput:false });
+            flatpickr('#filterArrivalDate', { dateFormat:'Y-m-d', locale:'th', allowInput:false });
+        } else {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+    });
+
+    window.doLogin = async function() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const btn = document.getElementById('loginBtn');
+        const err = document.getElementById('loginError');
+        err.textContent = ''; btn.disabled=true; btn.textContent='กำลังเข้าสู่ระบบ...';
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch(e) {
+            const msgs = {'auth/user-not-found':'ไม่พบบัญชีผู้ใช้นี้','auth/wrong-password':'รหัสผ่านไม่ถูกต้อง','auth/invalid-email':'รูปแบบอีเมลไม่ถูกต้อง','auth/invalid-credential':'อีเมลหรือรหัสผ่านไม่ถูกต้อง','auth/too-many-requests':'ลองหลายครั้งเกินไป กรุณารอสักครู่'};
+            err.textContent = msgs[e.code] || 'เกิดข้อผิดพลาด: '+e.message;
+        } finally { btn.disabled=false; btn.textContent='เข้าสู่ระบบ'; }
+    }
+    window.doLogout = async function() { await signOut(auth); }
+
+    async function loadData() {
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="table-empty">กำลังโหลดข้อมูล...</td></tr>';
+        try {
+            allData = (await fsList('registrations')).map(d => ({ ...d, emailResent: false }));
+            allData.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+
+            // Auto-cancel รอชำระเงิน เกิน 24 ชั่วโมง
+            const now = Date.now();
+            const limit24h = 24 * 60 * 60 * 1000;
+            for (const d of allData) {
+                if (d.status !== 'รอชำระเงิน') continue;
+                const ts = d.timestamp?.seconds ? d.timestamp.seconds * 1000 : null;
+                if (!ts || (now - ts) <= limit24h) continue;
+                await fsPatch('registrations', d.id, { status: 'ยกเลิกโดยผู้จอง' });
+                const qDate = d.visitDate || d.travelDate;
+                const qPeople = d.totalPeopleCount;
+                if (qDate && qPeople) {
+                    const qData = await fsGet('daily_quota', qDate);
+                    await fsPatch('daily_quota', qDate, { count: Math.max(0, (qData?.count||0) - qPeople) });
+                }
+                d.status = 'ยกเลิกโดยผู้จอง';
+            }
+
+            document.getElementById('loadError').style.display = 'none';
+        } catch(e) {
+            console.error('loadData error:', e);
+            document.getElementById('loadError').textContent = '❌ โหลดข้อมูลไม่ได้: ' + e.message;
+            document.getElementById('loadError').style.display = 'block';
+            allData = [];
+        }
+        filteredData = [...allData];
+        renderStats(); renderTable();
+    }
+
+    function renderStats() {
+        const today = new Date().toISOString().split('T')[0];
+        let pending=0,approved=0,revenue=0,todayCount=0,approvedPeople=0,waiting=0;
+        const approvedList = [];
+        allData.forEach(d => {
+            if(d.status==='รอชำระเงิน') waiting++;
+            if(d.status==='รอแอดมินตรวจสอบ') pending++;
+            if(d.status==='อนุมัติแล้ว') { approved++; revenue+=d.totalAmount||0; approvedPeople+=d.totalPeopleCount||0; approvedList.push(d); }
+            const dVisit = d.visitDate||d.travelDate||'';
+            if(dVisit===today&&d.status!=='ไม่อนุมัติ'&&d.status!=='ยกเลิกโดยผู้จอง') todayCount+=d.totalPeopleCount||0;
+        });
+        document.getElementById('statTotal').textContent = allData.length;
+        document.getElementById('statWaiting').textContent = waiting;
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statApproved').textContent = approved;
+        document.getElementById('statApprovedPeople').textContent = approvedPeople.toLocaleString();
+        document.getElementById('statRevenue').textContent = revenue.toLocaleString();
+        document.getElementById('statToday').textContent = todayCount;
+
+    }
+
+    const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    function fmtDate(str) {
+        if (!str || str === '-') return '-';
+        const [y, m, d] = str.split('-');
+        if (!y || !m || !d) return str;
+        return `${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543}`;
+    }
+
+    function getStatusClass(s) { return {'รอแอดมินตรวจสอบ':'s-pending','อนุมัติแล้ว':'s-approved','ไม่อนุมัติ':'s-rejected','ยกเลิกโดยผู้จอง':'s-cancelled','ติดต่อแล้ว':'s-contacted','อยู่ระหว่างดำเนินการ':'s-contacted','รอชำระเงิน':'s-waiting'}[s]||'s-pending'; }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        document.getElementById('filterCount').textContent = `แสดง ${filteredData.length} / ${allData.length} รายการ`;
+        if (!filteredData.length) { tbody.innerHTML='<tr><td colspan="8" class="table-empty">ไม่พบข้อมูล</td></tr>'; return; }
+        tbody.innerHTML = filteredData.map(d => {
+            const ts = d.timestamp?.toDate ? d.timestamp.toDate().toLocaleString('th-TH') : '-';
+            const rowBg = d.emailResent ? 'style="background:#eafaf1;"' : '';
+            return `<tr onclick="openModal('${d.id}')" ${rowBg}>
+                <td class="bid">${d.bookingId||'-'}${d.emailResent?'<span title="ส่งอีเมลซ้ำแล้ว" style="margin-left:4px;font-size:0.9em;">✉</span>':''}</td>
+                <td>${d.fullName||'-'}</td><td>${d.phone||'-'}</td>
+                <td>${fmtDate(d.visitDate||d.travelDate||'-')}</td>
+                <td style="text-align:center">${d.totalPeopleCount||0}</td>
+                <td style="text-align:right">${(d.totalAmount||0).toLocaleString()}</td>
+                <td style="font-size:0.78em;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.vehicle||'-'}</td>
+                <td><span class="status-badge ${getStatusClass(d.status)}">${d.status||'-'}</span></td>
+                <td>${ts}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    window.applyFilter = function() {
+        const bookingId   = document.getElementById('filterBookingId').value.trim().toLowerCase();
+        const filterName  = document.getElementById('filterName').value.trim().toLowerCase();
+        const filterEmail = document.getElementById('filterEmail').value.trim().toLowerCase();
+        const filterMonth = document.getElementById('filterMonth').value;
+        const filterPhone = document.getElementById('filterPhone').value.trim();
+        const visitDate   = document.getElementById('filterVisitDate').value;
+        const arrivalDate = document.getElementById('filterArrivalDate').value;
+        const status      = document.getElementById('filterStatus').value;
+        filteredData = allData.filter(d => {
+            if(bookingId   && !(d.bookingId||'').toLowerCase().includes(bookingId)) return false;
+            if(filterName  && !(d.fullName||'').toLowerCase().includes(filterName)) return false;
+            if(filterEmail && !(d.email||'').toLowerCase().includes(filterEmail)) return false;
+            if(filterMonth && !(d.visitDate||d.travelDate||'').startsWith('2026-'+filterMonth)) return false;
+            if(filterPhone && !(d.phone||'').includes(filterPhone)) return false;
+            if(visitDate   && (d.visitDate||d.travelDate||'') !== visitDate)        return false;
+            if(arrivalDate && (d.arrivalDate||'') !== arrivalDate)                  return false;
+            if(status      && d.status !== status)                                  return false;
+            return true;
+        });
+        renderTable();
+    }
+    window.clearFilter = function() {
+        document.getElementById('filterBookingId').value='';
+        document.getElementById('filterName').value='';
+        document.getElementById('filterEmail').value='';
+        document.getElementById('filterMonth').value='';
+        document.getElementById('filterPhone').value='';
+        document.getElementById('filterVisitDate')._flatpickr?.clear();
+        document.getElementById('filterArrivalDate')._flatpickr?.clear();
+        document.getElementById('filterStatus').value='';
+        filteredData=[...allData]; renderTable();
+    }
+    window.exportCSV = function() {
+        const headers=['Booking ID','วันที่จอง','ชื่อ','เบอร์','วันที่เดินทาง','จำนวนคน','ยอดเงิน','สถานะ'];
+        const rows = filteredData.map(d=>[
+            d.bookingId||'-',
+            d.timestamp?.toDate?d.timestamp.toDate().toLocaleDateString('th-TH'):'-',
+            d.fullName||'',d.phone||'',d.travelDate||'',
+            d.totalPeopleCount||0,d.totalAmount||0,d.status||''
+        ]);
+        const csv='﻿'+[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download=`HNY_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    async function loadBankInfo() {
+        try {
+            const data = await fsGet('settings', 'payment');
+            if (data) {
+                document.getElementById('bankName').value          = data.bankName          || '';
+                document.getElementById('bankAccountName').value   = data.bankAccountName   || '';
+                document.getElementById('bankAccountNumber').value = data.bankAccountNumber || '';
+                document.getElementById('bankDisplayName').textContent =
+                    data.bankName ? `${data.bankName} · ${data.bankAccountNumber || ''}` : '—';
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    window.toggleBankForm = function() {
+        const w = document.getElementById('bankFormWrap');
+        w.style.display = w.style.display === 'none' ? 'block' : 'none';
+    }
+
+    window.saveBankInfo = async function() {
+        const status = document.getElementById('bankSaveStatus');
+        const bankName          = document.getElementById('bankName').value.trim();
+        const bankAccountName   = document.getElementById('bankAccountName').value.trim();
+        const bankAccountNumber = document.getElementById('bankAccountNumber').value.trim();
+        if (!bankName || !bankAccountName || !bankAccountNumber) {
+            status.textContent = 'กรุณากรอกให้ครบทุกช่อง'; status.style.color = '#e74c3c'; return;
+        }
+        status.textContent = 'กำลังบันทึก...'; status.style.color = '#888';
+        try {
+            await fsPatch('settings', 'payment', { bankName, bankAccountName, bankAccountNumber });
+            status.textContent = 'บันทึกสำเร็จ ✓'; status.style.color = '#1e8449';
+            document.getElementById('bankDisplayName').textContent = `${bankName} · ${bankAccountNumber}`;
+            document.getElementById('bankFormWrap').style.display = 'none';
+        } catch(e) {
+            status.textContent = 'บันทึกไม่สำเร็จ'; status.style.color = '#e74c3c';
+        }
+    }
+
+    window.openEmailPreview = function(docId) {
+        const d = allData.find(x=>x.id===docId); if(!d) return;
+        const isApproved = d.status === 'อนุมัติแล้ว';
+        const isRejected = d.status === 'ไม่อนุมัติ';
+        if (!isApproved && !isRejected) {
+            alert('อีเมลจะส่งเมื่อสถานะเป็น "อนุมัติแล้ว" หรือ "ไม่อนุมัติ" เท่านั้น'); return;
+        }
+        const name = d.fullName||'-';
+        const bid  = d.bookingId||'-';
+        const arrD = fmtDate(d.arrivalDate||d.visitDate||d.travelDate||'');
+        const visD = fmtDate(d.visitDate||d.travelDate||'');
+        const veh  = d.vehicle||'-';
+        const ppl  = d.totalPeopleCount||0;
+        const amt  = (d.totalAmount||0).toLocaleString();
+
+        let html = '';
+        if (isApproved) {
+            html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.8;">
+                <p>เรียน คุณ ${name},</p>
+                <p>การจองของคุณได้รับการอนุมัติเรียบร้อยแล้ว ✅</p>
+                <p><strong>รายละเอียดการจอง:</strong></p>
+                <ul style="padding-left:20px;margin:6px 0;">
+                    <li><strong>หมายเลขการจอง:</strong> ${bid}</li>
+                    <li><strong>วันเดินทางมาถึงบ้านแม่โขง:</strong> ${arrD}</li>
+                    <li><strong>วันเข้าชม:</strong> ${visD}</li>
+                    <li><strong>จำนวนผู้เข้าชม:</strong> ${ppl} ท่าน</li>
+                    <li><strong>ยานพาหนะ:</strong> ${veh}</li>
+                    <li><strong>ยอดชำระ:</strong> ${amt} บาท</li>
+                </ul>
+                <p>กรุณานำหมายเลขการจอง <strong>${bid}</strong> ไปแสดงที่จุดตรวจในวันเดินทางครับ</p>
+                <p>หากพบว่าข้อมูลการจองผิดพลาด หรือต้องการสอบถามเพิ่มเติม โปรดติดต่อแอดมินได้โดยตรงครับ</p>
+                <p style="margin-top:12px;">ด้วยความนับถือ<br>ทีมงานน้ำตกห้วยน้ำเย็น อมก๋อย</p>
+            </div>`;
+        } else {
+            const reason = d.rejectReason || 'ไม่พบหลักฐานการชำระเงิน';
+            html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.8;">
+                <p>เรียน คุณ ${name},</p>
+                <p>ทางทีมงานขออภัยในความไม่สะดวกเป็นอย่างยิ่ง ❌</p>
+                <p>เราขอเรียนให้ทราบว่า การจองหมายเลข <strong>${bid}</strong> ของท่าน ไม่ได้รับการอนุมัติ ในรอบนี้</p>
+                <p><strong>สาเหตุเนื่องจาก:</strong> ${reason}</p>
+                <p><strong>รายละเอียดการจองที่ไม่ได้รับการอนุมัติ:</strong></p>
+                <ul style="padding-left:20px;margin:6px 0;">
+                    <li><strong>หมายเลขการจอง:</strong> ${bid}</li>
+                    <li><strong>วันเดินทางมาถึงบ้านแม่โขง:</strong> ${arrD}</li>
+                    <li><strong>วันเข้าชม:</strong> ${visD}</li>
+                    <li><strong>จำนวนผู้เข้าชม:</strong> ${ppl} ท่าน</li>
+                    <li><strong>ยานพาหนะ:</strong> ${veh}</li>
+                    <li><strong>ยอดชำระ:</strong> ${amt} บาท</li>
+                </ul>
+                <p>หากท่านมีข้อสงสัย ต้องการแก้ไขข้อมูล หรือต้องการสอบถามรายละเอียดเพิ่มเติมเกี่ยวกับการจอง สามารถติดต่อแอดมินได้โดยตรงครับ</p>
+                <p style="margin-top:12px;">ด้วยความนับถือ<br>ทีมงานน้ำตกห้วยน้ำเย็น อมก๋อย</p>
+            </div>`;
+        }
+        document.getElementById('emailPreviewContent').innerHTML = html;
+        document.getElementById('emailPreviewOverlay').classList.add('open');
+    }
+    window.closeEmailPreview = function() { document.getElementById('emailPreviewOverlay').classList.remove('open'); }
+    window.saveEmailAsImage = async function() {
+        const el = document.getElementById('emailPreviewContent');
+        const canvas = await html2canvas(el, { scale:2, backgroundColor:'#ffffff', useCORS:true });
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/jpeg', 0.92);
+        a.download = 'email_detail.jpg';
+        a.click();
+    }
+
+    window.openModal = function(docId) {
+        const d = allData.find(x=>x.id===docId); if(!d) return;
+        currentDocId = docId;
+        const ts = d.timestamp?.toDate ? d.timestamp.toDate().toLocaleString('th-TH') : '-';
+        const tk = d.tickets?.waterfall||{};
+        const slipHtml = d.slipImageUrl
+            ? `<img src="${d.slipImageUrl}" class="slip-img" onclick="openSlip('${d.id}')" title="คลิกเพื่อดูขนาดเต็ม" style="cursor:zoom-in;">`
+            : '<span style="color:#aaa;font-size:0.83em">ไม่มีสลิป (ฟรี)</span>';
+        document.getElementById('modalBody').innerHTML = `
+            <div class="modal-bid">${d.bookingId||'ไม่มี Booking ID'}</div>
+            <div class="modal-grid">
+                <div><div class="mf-label">ชื่อ-นามสกุล</div><div class="mf-value">${d.fullName||'-'}</div></div>
+                <div><div class="mf-label">เบอร์โทร</div><div class="mf-value">${d.phone||'-'}</div></div>
+                <div><div class="mf-label">อายุ / เพศ</div><div class="mf-value">${d.age||'-'} ปี / ${d.gender||'-'}</div></div>
+                <div><div class="mf-label">สัญชาติ</div><div class="mf-value">${d.nationality||'-'}</div></div>
+                <div class="mf-full">
+                    <div class="mf-label">อีเมล</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="mf-value" id="emailDisplay">${d.email||'-'}</div>
+                        <button onclick="toggleEmailEditForm()" style="background:none;border:none;color:var(--mint-green);font-size:0.82em;font-family:'Prompt';cursor:pointer;text-decoration:underline;padding:0;">แก้ไข</button>
+                    </div>
+                    <div id="emailEditForm" style="display:none;margin-top:6px;">
+                        <input type="email" id="editEmail" value="${d.email||''}" style="width:100%;padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-family:'Prompt';font-size:0.88em;">
+                        <div class="save-row" style="margin-top:8px;">
+                            <button class="btn-save-date" onclick="saveEmailEdit()">บันทึก</button>
+                            <button class="btn-cancel-edit" onclick="toggleEmailEditForm()">ยกเลิก</button>
+                        </div>
+                    </div>
+                </div>
+                <div><div class="mf-label">จังหวัด</div><div class="mf-value">${d.province||'-'}</div></div>
+                <div><div class="mf-label">โรคประจำตัว</div><div class="mf-value">${d.medicalCondition||'-'}</div></div>
+                <div><div class="mf-label">วันเข้าชม</div><div class="mf-value">${fmtDate(d.visitDate||d.travelDate||'-')}</div></div>
+                <div><div class="mf-label">วันเดินทางมาถึงบ้านแม่โขง</div><div class="mf-value">${fmtDate(d.arrivalDate||'-')}</div></div>
+                <div class="mf-full" style="text-align:right;">
+                    <button onclick="toggleEditDateForm()" style="background:none;border:none;color:var(--mint-green);font-size:0.82em;font-family:'Prompt';cursor:pointer;text-decoration:underline;padding:0;">แก้ไข</button>
+                </div>
+                <div class="mf-full">
+                    <div class="edit-date-form" id="editDateForm" style="display:none;">
+                        <label>วันเข้าชม</label>
+                        <input type="date" id="editVisitDate" value="${d.visitDate||d.travelDate||''}">
+                        <label>วันที่มาถึงบ้านแม่โขง</label>
+                        <input type="date" id="editArrivalDate" value="${d.arrivalDate||''}">
+                        <div class="save-row">
+                            <button class="btn-save-date" onclick="saveDateEdit()">บันทึก</button>
+                            <button class="btn-cancel-edit" onclick="toggleEditDateForm()">ยกเลิก</button>
+                        </div>
+                    </div>
+                </div>
+                <div><div class="mf-label">ยานพาหนะ</div><div class="mf-value">${d.vehicle||'-'}</div></div>
+                <div><div class="mf-label">รูปแบบ</div><div class="mf-value">${d.visitType||'-'}</div></div>
+                <div class="mf-full" style="text-align:right;">
+                    <button onclick="toggleTravelEditForm()" style="background:none;border:none;color:var(--mint-green);font-size:0.82em;font-family:'Prompt';cursor:pointer;text-decoration:underline;padding:0;">แก้ไข</button>
+                </div>
+                <div class="mf-full">
+                    <div class="edit-date-form" id="travelEditForm" style="display:none;">
+                        <label>ยานพาหนะ</label>
+                        <select id="editVehicle" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;">
+                            <option value="เหมารถกระบะชาวบ้าน (4,000 บาท)" ${d.vehicle==='เหมารถกระบะชาวบ้าน (4,000 บาท)'?'selected':''}>เหมารถกระบะชาวบ้าน (4,000 บาท)</option>
+                            <option value="จอยหน้างานรถกระบะชาวบ้าน — ค้างคืน (4,000 บาท)" ${d.vehicle==='จอยหน้างานรถกระบะชาวบ้าน — ค้างคืน (4,000 บาท)'?'selected':''}>จอยหน้างานรถกระบะชาวบ้าน — เฉพาะค้างคืน (4,000 บาท)</option>
+                            <option value="รถมอเตอร์ไซค์รับส่งจากชุมชน (1,000 บาท/คน)" ${d.vehicle==='รถมอเตอร์ไซค์รับส่งจากชุมชน (1,000 บาท/คน)'?'selected':''}>รถมอเตอร์ไซค์รับส่งจากชุมชน (1,000 บาท/คน)</option>
+                            <option value="รถยนต์ส่วนตัวหรือรถยกสูง" ${d.vehicle==='รถยนต์ส่วนตัวหรือรถยกสูง'?'selected':''}>รถยนต์ส่วนตัวหรือรถยกสูง</option>
+                            <option value="รถมอเตอร์ไซค์ส่วนตัว (ต้องมีเกียร์)" ${d.vehicle==='รถมอเตอร์ไซค์ส่วนตัว (ต้องมีเกียร์)'?'selected':''}>รถมอเตอร์ไซค์ส่วนตัว (ต้องมีเกียร์)</option>
+                        </select>
+                        <label style="margin-top:8px;display:block;">รูปแบบการเข้าชม</label>
+                        <select id="editVisitType" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;">
+                            <option value="ไป-กลับ" ${d.visitType==='ไป-กลับ'?'selected':''}>ไป-กลับ</option>
+                            <option value="พักค้างคืน" ${d.visitType==='พักค้างคืน'?'selected':''}>พักค้างคืน (ติดต่อที่พักในชุมชนด้วยตนเอง)</option>
+                        </select>
+                        <div class="save-row" style="margin-top:10px;">
+                            <button class="btn-save-date" onclick="saveTravelEdit()">บันทึก</button>
+                            <button class="btn-cancel-edit" onclick="toggleTravelEditForm()">ยกเลิก</button>
+                        </div>
+                    </div>
+                </div>
+                <div><div class="mf-label">เข้าชมน้ำตก (พื้นที่/นอกพื้นที่/ต่างชาติ/เด็ก)</div><div class="mf-value">${tk.local||0} / ${tk.thai||0} / ${tk.foreign||0} / ${tk.child||0}</div></div>
+                <div><div class="mf-label">เข้าชมถ้ำ (ไทย/ต่างชาติ/เด็ก)</div><div class="mf-value">${d.wantCave ? `${(d.tickets?.cave?.thai)||0} / ${(d.tickets?.cave?.foreign)||0} / ${(d.tickets?.cave?.child)||0}` : '✗'}</div></div>
+                <div><div class="mf-label">ยอดชำระ</div><div class="mf-value">${(d.totalAmount||0).toLocaleString()} บาท</div></div>
+                <div class="mf-full"><div class="mf-label">ผู้ติดต่อฉุกเฉิน</div><div class="mf-value">${d.emergencyName||'-'} (${d.emergencyRelation||'-'}) ${d.emergencyPhone||'-'}</div></div>
+                <div><div class="mf-label">สถานะ</div><div class="mf-value"><span class="status-badge ${getStatusClass(d.status)}">${d.status||'-'}</span></div></div>
+                <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+                    <button onclick="openEmailPreview('${d.id}')" style="padding:5px 12px;background:#f0f7f4;color:#0A4B33;border:1.5px solid #0A4B33;border-radius:7px;font-family:'Kanit';font-size:0.78em;cursor:pointer;font-weight:600;">รายละเอียดการจอง</button>
+                </div>
+                <div><div class="mf-label">วันที่จอง</div><div class="mf-value" style="font-size:0.82em">${ts}</div></div>
+                <div class="mf-full"><div class="mf-label">หลักฐานการชำระเงิน</div>${slipHtml}</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-action btn-approve" onclick="updateStatus('อนุมัติแล้ว')">✓ อนุมัติ</button>
+                <button class="btn-action btn-reject"  onclick="showRejectForm()">✗ ไม่อนุมัติ</button>
+                <button class="btn-action btn-note"    onclick="toggleStatusChangeForm()">⇄ เปลี่ยนสถานะ</button>
+                <button class="btn-action btn-delete"  onclick="deleteBooking()">🗑 ลบ</button>
+            </div>
+            <div class="status-change-form" id="statusChangeForm" style="display:none;">
+                <label>กดยืนยันเพื่อเปลี่ยนเป็น "อยู่ระหว่างดำเนินการ" (สีฟ้า)</label>
+                <div class="save-row">
+                    <button class="btn-save-date" onclick="saveStatusChange()">ยืนยัน</button>
+                    <button class="btn-cancel-edit" onclick="toggleStatusChangeForm()">ยกเลิก</button>
+                </div>
+            </div>
+            <div class="reject-form" id="rejectForm" style="display:none;">
+                <div class="rf-title">ระบุเหตุผลที่ไม่อนุมัติ</div>
+                <label class="reject-opt"><input type="radio" name="rejectReason" value="ไม่พบหลักฐานการชำระเงิน"> ไม่พบหลักฐานการชำระเงิน</label>
+                <label class="reject-opt"><input type="radio" name="rejectReason" value="custom" onchange="document.getElementById('rejectCustom').style.display='block'"> ระบุเหตุผลอื่น</label>
+                <textarea id="rejectCustom" class="reject-custom" rows="2" placeholder="ระบุเหตุผล..."></textarea>
+                <div class="rf-row">
+                    <button class="btn-confirm-reject" onclick="confirmReject()">ยืนยันไม่อนุมัติ</button>
+                    <button class="btn-cancel-reject" onclick="document.getElementById('rejectForm').style.display='none'">ยกเลิก</button>
+                </div>
+            </div>`;
+        document.getElementById('adminNoteInput').value = d.adminNote || '';
+        document.getElementById('modalOverlay').classList.add('open');
+    }
+    window.showRejectForm = function() {
+        const f = document.getElementById('rejectForm');
+        f.style.display = 'block';
+        document.querySelectorAll('input[name="rejectReason"]').forEach(r => r.checked = false);
+        document.getElementById('rejectCustom').style.display = 'none';
+        document.getElementById('rejectCustom').value = '';
+    }
+
+    window.confirmReject = async function() {
+        const selected = document.querySelector('input[name="rejectReason"]:checked');
+        if (!selected) { alert('กรุณาเลือกเหตุผล'); return; }
+        let reason = selected.value;
+        if (reason === 'custom') {
+            reason = document.getElementById('rejectCustom').value.trim();
+            if (!reason) { alert('กรุณาพิมพ์เหตุผล'); return; }
+        }
+        document.getElementById('rejectForm').style.display = 'none';
+        await updateStatus('ไม่อนุมัติ', reason);
+    }
+
+    window.toggleApprovedTable = function() {
+        const wrap = document.getElementById('approvedTableWrap');
+        const btn  = document.getElementById('approvedToggleBtn');
+        const open = wrap.style.display === 'none';
+        wrap.style.display = open ? 'block' : 'none';
+        btn.textContent = open ? 'ซ่อนรายการ' : 'ดูรายการ';
+    }
+
+    window.toggleEditDateForm = function() {
+        const f = document.getElementById('editDateForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    window.toggleTravelEditForm = function() {
+        const f = document.getElementById('travelEditForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    window.saveAdminNote = async function() {
+        if (!currentDocId) return;
+        const note = document.getElementById('adminNoteInput').value.trim();
+        const item = allData.find(x => x.id === currentDocId);
+        if (!item) return;
+        try {
+            await fsPatch('registrations', currentDocId, { adminNote: note });
+            item.adminNote = note;
+            filteredData = filteredData.map(x => x.id === currentDocId ? { ...x, adminNote: note } : x);
+            document.getElementById('adminNoteInput').style.borderColor = '#27ae60';
+            setTimeout(() => { document.getElementById('adminNoteInput').style.borderColor = ''; }, 1500);
+        } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+    }
+
+    window.toggleStatusChangeForm = function() {
+        const f = document.getElementById('statusChangeForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    window.saveStatusChange = async function() {
+        if (!currentDocId) return;
+        const item = allData.find(x => x.id === currentDocId);
+        if (!item) return;
+        const newStatus = 'อยู่ระหว่างดำเนินการ';
+        try {
+            await fsPatch('registrations', currentDocId, { status: newStatus });
+            item.status = newStatus;
+            allData = allData.map(x => x.id === currentDocId ? { ...x, status: newStatus } : x);
+            filteredData = filteredData.map(x => x.id === currentDocId ? { ...x, status: newStatus } : x);
+            closeModalDirect();
+            renderStats(); renderTable();
+        } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+    }
+
+    window.toggleEmailEditForm = function() {
+        const f = document.getElementById('emailEditForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+    window.saveEmailEdit = async function() {
+        if (!currentDocId) return;
+        const item = allData.find(x => x.id === currentDocId);
+        if (!item) return;
+        const newEmail = document.getElementById('editEmail').value.trim();
+        try {
+            await fsPatch('registrations', currentDocId, { email: newEmail });
+            item.email = newEmail;
+            allData = allData.map(x => x.id === currentDocId ? { ...x, email: newEmail } : x);
+            filteredData = filteredData.map(x => x.id === currentDocId ? { ...x, email: newEmail } : x);
+            document.getElementById('emailDisplay').textContent = newEmail || '-';
+            document.getElementById('emailEditForm').style.display = 'none';
+        } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+    }
+
+    window.saveTravelEdit = async function() {
+        if (!currentDocId) return;
+        const item = allData.find(x => x.id === currentDocId);
+        if (!item) return;
+        const newVehicle   = document.getElementById('editVehicle').value;
+        const newVisitType = document.getElementById('editVisitType').value;
+        try {
+            await fsPatch('registrations', currentDocId, { vehicle: newVehicle, visitType: newVisitType });
+            Object.assign(item, { vehicle: newVehicle, visitType: newVisitType });
+            filteredData = filteredData.map(x => x.id === currentDocId ? { ...x, vehicle: newVehicle, visitType: newVisitType } : x);
+            closeModalDirect();
+            renderStats(); renderTable();
+            alert('แก้ไขสำเร็จ ✓');
+        } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+    }
+
+    window.saveDateEdit = async function() {
+        if (!currentDocId) return;
+        const item = allData.find(x => x.id === currentDocId);
+        if (!item) return;
+
+        const newVisitDate   = document.getElementById('editVisitDate').value;
+        const newArrivalDate = document.getElementById('editArrivalDate').value;
+        const oldVisitDate   = item.visitDate || item.travelDate || '';
+
+        if (!newVisitDate) { alert('กรุณาเลือกวันเข้าชม'); return; }
+
+        try {
+            // คืนโควต้าวันเดิม + หักโควต้าวันใหม่ (ถ้าวันเข้าชมเปลี่ยน)
+            if (newVisitDate !== oldVisitDate && item.totalPeopleCount) {
+                if (oldVisitDate) {
+                    const oldQ = await fsGet('daily_quota', oldVisitDate);
+                    const oldCount = oldQ?.count || 0;
+                    await fsPatch('daily_quota', oldVisitDate, { count: Math.max(0, oldCount - item.totalPeopleCount) });
+                }
+                const newQ = await fsGet('daily_quota', newVisitDate);
+                const newCount = (newQ?.count || 0) + item.totalPeopleCount;
+                await fsPatch('daily_quota', newVisitDate, { count: newCount });
+            }
+
+            const updateData = {
+                visitDate:    newVisitDate,
+                arrivalDate:  newArrivalDate,
+                editedByAdmin: true,
+                originalVisitDate:   item.editedByAdmin ? (item.originalVisitDate || oldVisitDate) : oldVisitDate,
+                originalArrivalDate: item.editedByAdmin ? (item.originalArrivalDate || item.arrivalDate || '') : (item.arrivalDate || ''),
+            };
+            await fsPatch('registrations', currentDocId, updateData);
+            Object.assign(item, updateData);
+            filteredData = filteredData.map(x => x.id === currentDocId ? { ...x, ...updateData } : x);
+
+            closeModalDirect();
+            renderStats(); renderTable();
+            alert('แก้ไขวันที่สำเร็จ ✓');
+        } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+    }
+
+    // ── CALENDAR ──
+    const CAL_MONTHS = [
+        { year:2026, month:6,  label:'กรกฎาคม 2569' },
+        { year:2026, month:7,  label:'สิงหาคม 2569' },
+        { year:2026, month:8,  label:'กันยายน 2569' },
+        { year:2026, month:9,  label:'ตุลาคม 2569' },
+    ];
+    const QUOTA_MAX = 150;
+    const DAY_NAMES = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+    let calMonthIdx = 0;
+    let calQuotaCache = {};
+
+    window.openCalendar = async function() {
+        document.getElementById('calOverlay').classList.add('open');
+        await loadCalMonth();
+    }
+    window.closeCalendar = function() {
+        document.getElementById('calOverlay').classList.remove('open');
+    }
+    window.calPrev = async function() {
+        if (calMonthIdx > 0) { calMonthIdx--; await loadCalMonth(); }
+    }
+    window.calNext = async function() {
+        if (calMonthIdx < CAL_MONTHS.length - 1) { calMonthIdx++; await loadCalMonth(); }
+    }
+
+    async function loadCalMonth() {
+        const { year, month, label } = CAL_MONTHS[calMonthIdx];
+        document.getElementById('calMonthTitle').textContent = label;
+        const grid = document.getElementById('calGrid');
+        grid.innerHTML = DAY_NAMES.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const today = new Date().toISOString().split('T')[0];
+
+        for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
+
+        // โหลด quota ทั้งเดือนพร้อมกัน
+        const fetches = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            if (calQuotaCache[dateStr] === undefined) fetches.push(fetchQuota(dateStr));
+        }
+        await Promise.all(fetches);
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const dow = new Date(year, month, d).getDay();
+            const isWed = dow === 3 && dateStr !== '2026-07-29';
+            const count = calQuotaCache[dateStr] || 0;
+            const pct   = Math.min((count / QUOTA_MAX) * 100, 100);
+            const isToday = dateStr === today;
+
+            let cls, barColor;
+            if (isWed)        { cls = 'blocked'; barColor = '#ccc'; }
+            else if (count >= QUOTA_MAX) { cls = 'full';    barColor = '#e74c3c'; }
+            else if (count >= 120)       { cls = 'warn';    barColor = '#e67e22'; }
+            else if (count >= 60)        { cls = 'low';     barColor = '#f1c40f'; }
+            else                         { cls = 'free';    barColor = '#27ae60'; }
+            if (isToday) cls += ' today';
+
+            grid.innerHTML += `
+                <div class="cal-day ${cls}">
+                    <div class="cd-date">${d}</div>
+                    ${isWed ? '<div class="cd-count" style="font-size:0.7em;">ปิด</div>' : `<div class="cd-count">${count}/${QUOTA_MAX}</div><div class="cd-bar"><div class="cd-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>`}
+                </div>`;
+        }
+    }
+
+    async function fetchQuota(dateStr) {
+        try {
+            const data = await fsGet('daily_quota', dateStr);
+            calQuotaCache[dateStr] = data?.count || 0;
+        } catch { calQuotaCache[dateStr] = 0; }
+    }
+    // ── END CALENDAR ──
+
+    window.openSlip = function(docId) {
+        const d = allData.find(x=>x.id===docId);
+        if (!d?.slipImageUrl) return;
+        document.getElementById('slipLightboxImg').src = d.slipImageUrl;
+        document.getElementById('slipLightbox').classList.add('open');
+    }
+    window.closeModal = function(e) { if(e.target===document.getElementById('modalOverlay')) closeModalDirect(); }
+    window.closeModalDirect = function() { document.getElementById('modalOverlay').classList.remove('open'); currentDocId=null; }
+
+    window.updateStatus = async function(newStatus, rejectReason = '') {
+        if(!currentDocId) return;
+        const item = allData.find(x=>x.id===currentDocId);
+        if (!item) return;
+        try {
+            const patchData = { status: newStatus };
+            if (rejectReason) patchData.rejectReason = rejectReason;
+            await fsPatch('registrations', currentDocId, patchData);
+
+            // คืนโควต้าเมื่อไม่อนุมัติ (และสถานะเดิมยังไม่ใช่ไม่อนุมัติ)
+            const prevStatus = item.status;
+            const shouldRefund = newStatus === 'ไม่อนุมัติ' && prevStatus !== 'ไม่อนุมัติ' && prevStatus !== 'ยกเลิกโดยผู้จอง';
+            const shouldCharge = newStatus === 'อนุมัติแล้ว' && (prevStatus === 'ไม่อนุมัติ' || prevStatus === 'ยกเลิกโดยผู้จอง');
+            if (shouldRefund || shouldCharge) {
+                const qDate = item.visitDate || item.travelDate;
+                const qPeople = item.totalPeopleCount;
+                console.log('[quota] qDate:', qDate, 'people:', qPeople, 'refund:', shouldRefund);
+                if (qDate && qPeople) {
+                    const qData = await fsGet('daily_quota', qDate);
+                    const currentCount = qData?.count || 0;
+                    const newCount = shouldRefund
+                        ? Math.max(0, currentCount - qPeople)
+                        : currentCount + qPeople;
+                    console.log('[quota] currentCount:', currentCount, '→ newCount:', newCount);
+                    await fsPatch('daily_quota', qDate, { count: newCount });
+                    console.log('[quota] updated OK');
+                } else {
+                    console.warn('[quota] skipped — qDate:', qDate, 'people:', qPeople);
+                }
+            } else {
+                console.log('[quota] no change — prevStatus:', prevStatus, 'newStatus:', newStatus);
+            }
+
+            const isResend = prevStatus === newStatus;
+            item.status = newStatus;
+            if (isResend) item.emailResent = true;
+            filteredData = filteredData.map(x=>x.id===currentDocId?{...x,status:newStatus,...(isResend?{emailResent:true}:{})}:x);
+            if (item.email && (newStatus==='อนุมัติแล้ว'||newStatus==='ไม่อนุมัติ')) {
+                const templateId = newStatus==='อนุมัติแล้ว' ? 'template_s8v7l19' : 'template_bmgejqi';
+                try { await emailjs.send('service_nr2ouji', templateId, { to_email:item.email, to_name:item.fullName||'', booking_id:item.bookingId||'', travel_date:item.visitDate||item.travelDate||'', arrival_date:item.arrivalDate||'', vehicle:item.vehicle||'', people_count:item.totalPeopleCount||0, amount:(item.totalAmount||0).toLocaleString(), reject_reason:rejectReason }); }
+                catch(emailErr) { console.warn('EmailJS error:', emailErr); }
+            }
+            renderStats(); renderTable(); closeModalDirect();
+        } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
+    }
+    window.recalculateQuota = async function() {
+        if(!confirm('คำนวณโควตาใหม่ทั้งหมด?\nจะนับจาก booking จริงในระบบ (ไม่รวมยกเลิก/ไม่อนุมัติ)')) return;
+        try {
+            const allRegs = await fsList('registrations');
+            const quotaMap = {};
+            const excluded = ['ไม่อนุมัติ','ยกเลิกโดยผู้จอง'];
+            for (const d of allRegs) {
+                if (excluded.includes(d.status)) continue;
+                const date = d.visitDate || d.travelDate;
+                if (!date) continue;
+                quotaMap[date] = (quotaMap[date]||0) + (d.totalPeopleCount||0);
+            }
+            for (const [date, count] of Object.entries(quotaMap)) {
+                await fsPatch('daily_quota', date, { count });
+            }
+            alert('คำนวณโควตาใหม่สำเร็จ ✓ (' + Object.keys(quotaMap).length + ' วัน)');
+            loadData();
+        } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
+    }
+
+    window.deleteBooking = async function() {
+        if(!currentDocId) return;
+        const item=allData.find(x=>x.id===currentDocId);
+        if(!confirm(`ลบการจอง ${item?.bookingId||''} ออกจากระบบ?\nไม่สามารถย้อนกลับได้`)) return;
+        try {
+            // คืนโควตาถ้ายังไม่ถูกยกเลิก/ไม่อนุมัติ
+            const shouldRefund = item.status !== 'ไม่อนุมัติ' && item.status !== 'ยกเลิกโดยผู้จอง';
+            if (shouldRefund) {
+                const qDate = item.visitDate || item.travelDate;
+                const qPeople = item.totalPeopleCount;
+                if (qDate && qPeople) {
+                    const qData = await fsGet('daily_quota', qDate);
+                    await fsPatch('daily_quota', qDate, { count: Math.max(0, (qData?.count||0) - qPeople) });
+                }
+            }
+            await fsDelete('registrations', currentDocId);
+            allData=allData.filter(x=>x.id!==currentDocId);
+            filteredData=filteredData.filter(x=>x.id!==currentDocId);
+            renderStats(); renderTable(); closeModalDirect();
+        } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
+    }
+</script>
+</body>
+</html>

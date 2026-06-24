@@ -1,0 +1,205 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ยกเลิก / ตรวจสอบการจอง - น้ำตกห้วยน้ำเย็น</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --dark-green:#0A4B33; --mint-green:#67A792; --gold:#cc8e35; --bg:#F0EBE0; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Prompt',sans-serif; background:var(--bg); min-height:100vh; }
+
+        .page-header {
+            position:relative; height:220px; overflow:hidden;
+            display:flex; align-items:flex-end; padding:0 20px 28px;
+        }
+        .page-header-bg {
+            position:absolute; inset:0;
+            background-image:url('195737.jpg');
+            background-size:cover; background-position:center 40%; z-index:0;
+        }
+        .page-header-overlay {
+            position:absolute; inset:0;
+            background:linear-gradient(to bottom,rgba(10,75,51,0.4) 0%,rgba(5,30,18,0.88) 100%);
+            z-index:1;
+        }
+        .page-header-content { position:relative; z-index:2; color:white; max-width:520px; width:100%; margin:0 auto; }
+        .back-link {
+            display:inline-flex; align-items:center; gap:6px;
+            color:rgba(255,255,255,0.75); text-decoration:none;
+            font-size:0.82em; margin-bottom:10px; transition:color 0.2s;
+        }
+        .back-link:hover { color:white; }
+        .badge { font-family:'Kanit'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase; color:var(--mint-green); margin-bottom:4px; }
+        .page-header-content h1 { font-family:'Kanit'; font-size:1.8rem; font-weight:700; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
+
+        .content-wrap { max-width:520px; margin:0 auto; padding:24px 20px 40px; }
+
+        .card { background:white; border-radius:16px; box-shadow:0 4px 20px rgba(10,75,51,0.08); padding:24px 20px; margin-bottom:16px; }
+
+        .form-group { margin-bottom:14px; }
+        label { display:block; font-weight:600; margin-bottom:5px; font-size:0.85em; color:#555; }
+        input[type="text"],input[type="tel"] {
+            width:100%; padding:11px 13px;
+            border:1.5px solid #e0e0e0; border-radius:8px;
+            font-family:'Prompt'; font-size:0.93em; background:#fafafa; transition:border-color 0.2s;
+        }
+        input:focus { outline:none; border-color:var(--mint-green); background:white; }
+
+        .btn-search {
+            width:100%; padding:13px; background:var(--dark-green); color:white;
+            border:none; border-radius:8px; font-family:'Kanit'; font-size:1em; font-weight:600;
+            cursor:pointer; transition:0.2s;
+        }
+        .btn-search:hover { background:#063222; }
+        .btn-search:disabled { background:#aaa; cursor:not-allowed; }
+
+        #resultSection { display:none; margin-top:4px; }
+
+        .result-card { background:#f7fbf9; border:1.5px solid rgba(103,167,146,0.3); border-radius:12px; padding:18px; margin-bottom:14px; }
+        .result-card h3 { font-family:'Kanit'; color:var(--dark-green); margin:0 0 12px; font-size:0.95rem; }
+        .info-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:0.86em; }
+        .info-row:last-child { border-bottom:none; }
+        .info-row .key { color:#777; }
+        .info-row .val { font-weight:600; }
+
+        .status-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.78em; font-weight:600; }
+        .s-pending   { background:#fef9e7; color:#9a7d0a; }
+        .s-approved  { background:#eafaf1; color:#1e8449; }
+        .s-rejected  { background:#fdedec; color:#c0392b; }
+        .s-cancelled { background:#f0f0f0; color:#777; }
+
+        .notice-box {
+            background:#fffdf0; border-left:4px solid var(--gold);
+            border-radius:0 8px 8px 0; padding:11px 13px;
+            font-size:0.83em; color:#666; line-height:1.6; margin-bottom:14px;
+        }
+        .notice-box strong { color:#856404; }
+
+        .btn-cancel-booking {
+            width:100%; padding:13px; background:white; color:#e74c3c;
+            border:2px solid #e74c3c; border-radius:8px;
+            font-family:'Kanit'; font-size:1em; font-weight:600; cursor:pointer; transition:0.2s;
+        }
+        .btn-cancel-booking:hover { background:#fdedec; }
+
+        .error-msg { background:#fdedec; color:#c0392b; padding:11px 14px; border-radius:8px; font-size:0.88em; margin-top:14px; display:none; }
+
+        @media(max-width:480px) { .page-header{height:180px;} .page-header-content h1{font-size:1.4rem;} }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <div class="page-header-bg"></div>
+    <div class="page-header-overlay"></div>
+    <div class="page-header-content">
+        <a href="index.html" class="back-link">← กลับหน้าหลัก</a>
+        <div class="badge">Huai Nam Yen Waterfall</div>
+        <h1>ยกเลิก / ตรวจสอบการจอง</h1>
+    </div>
+</div>
+
+<div class="content-wrap">
+    <div class="card">
+        <div class="form-group">
+            <label>หมายเลขการจอง</label>
+            <input type="text" id="inputBookingId" placeholder="HNY-XXXXXXXX" style="text-transform:uppercase;letter-spacing:1px;">
+        </div>
+        <div class="form-group">
+            <label>เบอร์โทรศัพท์ที่ลงทะเบียน</label>
+            <input type="tel" id="inputPhone" placeholder="0812345678" pattern="0[0-9]{9}">
+        </div>
+        <button class="btn-search" onclick="searchBooking()">ค้นหาการจอง</button>
+        <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <div id="resultSection">
+        <div class="result-card">
+            <h3>ข้อมูลการจอง</h3>
+            <div id="bookingInfo"></div>
+        </div>
+        <div class="notice-box" id="adminNotice" style="display:none;">
+            <strong>หมายเหตุ:</strong> การจองที่อนุมัติแล้วไม่สามารถยกเลิกผ่านระบบออนไลน์ได้ กรุณาติดต่อแอดมินโดยตรง
+        </div>
+        <button class="btn-cancel-booking" id="cancelBtn" onclick="confirmCancel()" style="display:none;">ยืนยันการยกเลิกการจอง</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, doc, query, where, getDocs, updateDoc, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const firebaseConfig = { apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4", authDomain:"maekhong-waterfall-51445.firebaseapp.com", projectId:"maekhong-waterfall-51445", storageBucket:"maekhong-waterfall-51445.firebasestorage.app", messagingSenderId:"40565650481", appId:"1:40565650481:web:9cf6a76cb388c61ea05110" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let foundDocId = null, foundData = null;
+
+    const params = new URLSearchParams(window.location.search);
+    const prefilledId = params.get('bookingId');
+    if (prefilledId) document.getElementById('inputBookingId').value = prefilledId;
+
+    window.searchBooking = async function() {
+        const bookingId = document.getElementById('inputBookingId').value.trim().toUpperCase();
+        const phone = document.getElementById('inputPhone').value.trim();
+        const errEl = document.getElementById('errorMsg');
+        errEl.style.display='none';
+        document.getElementById('resultSection').style.display='none';
+        foundDocId=null; foundData=null;
+        if (!bookingId||!phone) { errEl.textContent='กรุณากรอกหมายเลขการจองและเบอร์โทรศัพท์'; errEl.style.display='block'; return; }
+        const btn = document.querySelector('.btn-search');
+        btn.disabled=true; btn.textContent='กำลังค้นหา...';
+        try {
+            const q = query(collection(db,"registrations"), where("bookingId","==",bookingId), where("phone","==",phone));
+            const snap = await getDocs(q);
+            if (snap.empty) { errEl.textContent='ไม่พบการจองที่ตรงกัน กรุณาตรวจสอบหมายเลขและเบอร์โทรอีกครั้ง'; errEl.style.display='block'; }
+            else { snap.forEach(d => { foundDocId=d.id; foundData=d.data(); }); renderResult(); }
+        } catch(err) { console.error(err); errEl.textContent='เกิดข้อผิดพลาด กรุณาลองใหม่'; errEl.style.display='block'; }
+        finally { btn.disabled=false; btn.textContent='ค้นหาการจอง'; }
+    }
+
+    function getStatusBadge(status) {
+        const map = {'รอแอดมินตรวจสอบ':'s-pending','อนุมัติแล้ว':'s-approved','ไม่อนุมัติ':'s-rejected','ยกเลิกโดยผู้จอง':'s-cancelled'};
+        return `<span class="status-badge ${map[status]||'s-pending'}">${status}</span>`;
+    }
+    function renderResult() {
+        const d = foundData;
+        const rows = [
+            ['หมายเลขการจอง', d.bookingId||'-'],
+            ['ชื่อ-นามสกุล', d.fullName],
+            ['วันที่เดินทาง', d.travelDate],
+            ['จำนวนคน', (d.totalPeopleCount||0)+' คน'],
+            ['ยอดชำระ', (d.totalAmount||0).toLocaleString()+' บาท'],
+            ['สถานะ', getStatusBadge(d.status)],
+        ];
+        document.getElementById('bookingInfo').innerHTML = rows.map(([k,v])=>`<div class="info-row"><span class="key">${k}</span><span class="val">${v}</span></div>`).join('');
+        const isApproved = d.status==='อนุมัติแล้ว';
+        const isCancelled = d.status==='ยกเลิกโดยผู้จอง'||d.status==='ไม่อนุมัติ';
+        document.getElementById('adminNotice').style.display = isApproved?'block':'none';
+        document.getElementById('cancelBtn').style.display = (!isApproved&&!isCancelled)?'block':'none';
+        document.getElementById('resultSection').style.display = 'block';
+    }
+
+    window.confirmCancel = async function() {
+        if (!foundDocId||!foundData) return;
+        if (!confirm(`ยืนยันการยกเลิกการจอง?\n\nหมายเลข: ${foundData.bookingId}\nวันที่เดินทาง: ${foundData.travelDate}\nจำนวน: ${foundData.totalPeopleCount} คน`)) return;
+        const btn = document.getElementById('cancelBtn');
+        btn.disabled=true; btn.textContent='กำลังยกเลิก...';
+        try {
+            const quotaRef = doc(db,"daily_quota",foundData.travelDate);
+            const bookingRef = doc(db,"registrations",foundDocId);
+            await runTransaction(db, async (transaction) => {
+                const quotaDoc = await transaction.get(quotaRef);
+                const currentCount = quotaDoc.exists()?(quotaDoc.data().count||0):0;
+                transaction.set(quotaRef,{count:Math.max(0,currentCount-(foundData.totalPeopleCount||0))},{merge:true});
+                transaction.update(bookingRef,{status:"ยกเลิกโดยผู้จอง",cancelledAt:serverTimestamp()});
+            });
+            alert('ยกเลิกการจองเรียบร้อยแล้ว');
+            foundData.status='ยกเลิกโดยผู้จอง'; renderResult();
+        } catch(err) { console.error(err); alert('เกิดข้อผิดพลาด กรุณาลองใหม่'); btn.disabled=false; btn.textContent='ยืนยันการยกเลิกการจอง'; }
+    }
+</script>
+</body>
+</html>
