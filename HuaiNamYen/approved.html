@@ -432,10 +432,17 @@
     function buildReportSheet(monthNum) {
         const monthName = MONTHS_FULL[parseInt(monthNum)-1];
         const year = 2569;
+        const VEHICLE_GROUP = v => {
+            if (!v) return 2;
+            if (v.includes('รถมอเตอร์ไซค์รับส่งจากชุมชน')) return 0;
+            if (v.includes('เหมา') || v.includes('จอยหน้างานรถกระบะ')) return 1;
+            return 2;
+        };
+        const VEHICLE_BG = [' #e8f4fd', '#fef9e7', '#f5f5f5'];
         const items = allData.filter(d => (d.visitDate||d.travelDate||'').startsWith('2026-'+monthNum));
         const byDate = {};
         items.forEach(d => {
-            const date = d.visitDate||d.travelDate||'';
+            const date = d.arrivalDate||'';
             if (!byDate[date]) byDate[date] = [];
             byDate[date].push(d);
         });
@@ -447,13 +454,12 @@
             daysHtml = '<div class="rs-empty">ไม่มีรายการในเดือนนี้</div>';
         } else {
             sortedDates.forEach(date => {
-                const dayItems = byDate[date];
+                const dayItems = [...byDate[date]].sort((a,b) => VEHICLE_GROUP(a.vehicle) - VEHICLE_GROUP(b.vehicle));
                 const [y,m,d] = date.split('-');
                 const _dow = DAYS_TH[new Date(date+'T00:00:00').getDay()];
-                const dayLabel = `วันที่ ${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543} (${_dow})`;
+                const dayLabel = `วันที่เดินทาง ${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543} (${_dow})`;
                 const rows = dayItems.map((x,i) => {
                     const phone = x.phone||'-';
-                    const maskedPhone = phone.length >= 4 ? phone.slice(0, phone.length-4) + 'XXXX' : phone;
                     const veh = (x.vehicle||'-').replace(/ \(.*?\)/g,'');
                     const visitD = fmtDate(x.visitDate||x.travelDate);
                     const arrD = fmtDate(x.arrivalDate);
@@ -468,12 +474,12 @@
                     const cvCh    = cv.child||0;
                     const wantCave = x.wantCave;
                     const caveTotal = cvThai+cvFor+cvCh;
-                    const caveStr = (wantCave && caveTotal > 0) ? `${cvThai}/${cvFor}/${cvCh}` : '-';
                     const wfStr = `นอกพื้นที่ ${wfThai}` + (wfFor>0?` · ต่างชาติ ${wfFor}`:'') + (wfCh>0?` · เด็ก ${wfCh}`:'') + (wfLocal>0?` · พื้นที่ ${wfLocal}`:'');
                     const caveLabel = (wantCave && caveTotal > 0) ? `คนไทย ${cvThai}` + (cvFor>0?` · ต่างชาติ ${cvFor}`:'') + (cvCh>0?` · เด็ก ${cvCh}`:'') : '-';
                     const isPrivate = PRIVATE_VEHICLES.includes(x.vehicle||'');
                     const pickupTime = x.pickupTime || '';
-                    return `<div class="rs-row">
+                    const rowBg = VEHICLE_BG[VEHICLE_GROUP(x.vehicle)];
+                    return `<div class="rs-row" style="background:${rowBg};border-radius:5px;margin-bottom:3px;">
                         <span class="rs-num">${i+1}.</span>
                         <div class="rs-content">
                             <div class="rs-line1" style="font-size:0.85em;color:#222;">
