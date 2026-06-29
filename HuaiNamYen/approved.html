@@ -433,12 +433,13 @@
         const monthName = MONTHS_FULL[parseInt(monthNum)-1];
         const year = 2569;
         const VEHICLE_GROUP = v => {
-            if (!v) return 2;
-            if (v.includes('รถมอเตอร์ไซค์รับส่งจากชุมชน')) return 0;
-            if (v.includes('เหมา') || v.includes('จอยหน้างานรถกระบะ')) return 1;
-            return 2;
+            if (!v) return 3;
+            if (v.includes('จอยหน้างานรถกระบะ')) return 0;
+            if (v.includes('เหมา')) return 1;
+            if (v.includes('รถมอเตอร์ไซค์รับส่งจากชุมชน')) return 2;
+            return 3;
         };
-        const VEHICLE_BG = [' #e8f4fd', '#fef9e7', '#f5f5f5'];
+        const VEHICLE_BG = ['#ede7f6', '#fef9e7', '#e8f4fd', '#f5f5f5'];
         const items = allData.filter(d => {
             const vd = d.visitDate||d.travelDate||'';
             const ad = d.arrivalDate||'';
@@ -457,20 +458,17 @@
         if (!sortedDates.length) {
             daysHtml = '<div class="rs-empty">ไม่มีรายการในเดือนนี้</div>';
         } else {
-            const GROUP_LABEL = ['จอยหน้างาน','เหมา','ส่วนตัว'];
-            const GROUP_HEADER_BG = ['#1a6a9a','#b7950b','#555'];
             sortedDates.forEach(date => {
                 const [y,m,d] = date.split('-');
                 const _dow = DAYS_TH[new Date(date+'T00:00:00').getDay()];
                 const dayLabel = `วันที่เดินทาง ${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543} (${_dow})`;
-                const groups = [[],[],[]];
+                const groups = [[],[],[],[]];
                 byDate[date].forEach(x => groups[VEHICLE_GROUP(x.vehicle)].push(x));
                 let groupsHtml = '';
                 let globalIdx = 1;
                 groups.forEach((grp, gi) => {
                     if (!grp.length) return;
-                    groupsHtml += `<div style="margin-bottom:8px;">
-                        <div style="background:${GROUP_HEADER_BG[gi]};color:white;font-family:'Kanit';font-size:0.78em;font-weight:700;padding:3px 10px;border-radius:4px;margin-bottom:4px;">${GROUP_LABEL[gi]}</div>`;
+                    groupsHtml += `<div style="margin-bottom:4px;">`;
                     grp.forEach(x => {
                         const veh = (x.vehicle||'-').replace(/ \(.*?\)/g,'');
                         const visitD = fmtDate(x.visitDate||x.travelDate);
