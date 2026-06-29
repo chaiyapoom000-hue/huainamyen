@@ -484,25 +484,32 @@
                         const isPrivate = PRIVATE_VEHICLES.includes(x.vehicle||'');
                         const pickupTime = x.pickupTime||'';
                         const rowBg = VEHICLE_BG[gi];
+                        const homestay = x.homestay||'';
                         groupsHtml += `<div class="rs-row" style="background:${rowBg};border-radius:5px;margin-bottom:3px;">
                             <span class="rs-num">${globalIdx++}.</span>
                             <div class="rs-content">
                                 <div class="rs-line1" style="font-size:0.85em;color:#222;">
                                     <span class="rs-name" style="font-size:1em;color:#222;">${x.fullName||'-'}</span>
                                     <span style="color:#333;font-weight:600;">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveLabel}</span>
-                                    <span class="rs-bid" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
-                                        <span>${x.bookingId||'-'}</span>
-                                        ${!isPrivate ? `<span style="display:flex;gap:4px;align-items:center;">
-                                            <input data-id="${x.id}" type="text" value="${pickupTime}" placeholder="HH:MM" onchange="savePickupTimeReport(this)" style="width:100%;padding:4px 6px;border:1px solid #ccc;border-radius:5px;font-family:'Prompt';font-size:0.9em;text-align:center;">
-                                            <button onclick="savePickupTimeReport(this.previousElementSibling)" style="padding:2px 7px;background:var(--dark-green);color:white;border:none;border-radius:5px;font-size:0.75em;cursor:pointer;">✓</button>
-                                        </span>` : ''}
-                                    </span>
+                                    <span class="rs-bid">${x.bookingId||'-'}</span>
                                 </div>
                                 <div class="rs-line2" style="font-size:0.85em;color:#222;gap:10px;margin-top:3px;font-weight:500;">
                                     <span>เดินทาง <strong>${arrD}</strong></span>
                                     <span>เข้าชม <strong>${visitD}</strong></span>
                                     <span>${veh}</span>
                                     <span>${x.phone||'-'}</span>
+                                </div>
+                                <div style="display:flex;gap:8px;margin-top:6px;align-items:center;">
+                                    ${!isPrivate ? `<div style="display:flex;gap:4px;align-items:center;flex:1;">
+                                        <span style="font-size:0.8em;color:#555;white-space:nowrap;">เวลารับส่ง</span>
+                                        <input data-id="${x.id}" type="text" value="${pickupTime}" placeholder="HH:MM" onchange="savePickupTimeReport(this)" style="flex:1;padding:6px 10px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:1em;text-align:center;">
+                                        <button onclick="savePickupTimeReport(this.previousElementSibling)" style="padding:4px 10px;background:var(--dark-green);color:white;border:none;border-radius:6px;font-size:0.85em;cursor:pointer;">✓</button>
+                                    </div>` : `<div style="flex:1;"></div>`}
+                                    <div style="display:flex;gap:4px;align-items:center;flex:2;">
+                                        <span style="font-size:0.8em;color:#555;white-space:nowrap;">โฮมสเตย์</span>
+                                        <input data-id="${x.id}" type="text" value="${homestay}" placeholder="ชื่อโฮมสเตย์" onchange="saveHomestayReport(this)" style="flex:1;padding:6px 10px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:1em;">
+                                        <button onclick="saveHomestayReport(this.previousElementSibling)" style="padding:4px 10px;background:#1a6a9a;color:white;border:none;border-radius:6px;font-size:0.85em;cursor:pointer;">✓</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>`;
@@ -528,6 +535,18 @@
                 <span>จำนวนคนรวม: <strong>${totalPeople} คน</strong></span>
             </div>
         </div>`;
+    }
+
+    window.saveHomestayReport = async function(input) {
+        const id = input.dataset.id;
+        const val = input.value.trim();
+        try {
+            await fsPatch('registrations', id, { homestay: val });
+            const item = allData.find(x => x.id === id);
+            if (item) item.homestay = val;
+            input.style.borderColor = '#27ae60';
+            setTimeout(() => input.style.borderColor = '#bbb', 1500);
+        } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
     }
 
     window.savePickupTimeReport = async function(input) {
