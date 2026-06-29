@@ -525,7 +525,7 @@
                 });
                 const dayId = `day-${date}`;
                 daysHtml += `<div class="rs-day" id="${dayId}"><div class="rs-day-title" style="display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" class="day-check" data-day="${dayId}" style="width:16px;height:16px;cursor:pointer;accent-color:#0A4B33;">
+                    ${!touristMode ? `<input type="checkbox" class="day-check" data-day="${dayId}" style="width:16px;height:16px;cursor:pointer;accent-color:#0A4B33;">` : ''}
                     <span>${dayLabel}</span>
                 </div>${groupsHtml}</div>`;
             });
@@ -570,6 +570,8 @@
 
     window.openReport = function(touristMode=false) {
         document.getElementById('reportSheets').innerHTML = REPORT_MONTHS.map(m => buildReportSheet(m, touristMode)).join('');
+        const dlBtns = document.querySelectorAll('.btn-dl');
+        dlBtns.forEach(b => b.style.display = touristMode ? 'none' : '');
         document.getElementById('reportModal').classList.add('open');
     }
     window.closeReport = function() { document.getElementById('reportModal').classList.remove('open'); }
