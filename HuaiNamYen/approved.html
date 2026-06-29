@@ -439,7 +439,11 @@
             return 2;
         };
         const VEHICLE_BG = [' #e8f4fd', '#fef9e7', '#f5f5f5'];
-        const items = allData.filter(d => (d.visitDate||d.travelDate||'').startsWith('2026-'+monthNum));
+        const items = allData.filter(d => {
+            const vd = d.visitDate||d.travelDate||'';
+            const ad = d.arrivalDate||'';
+            return vd.startsWith('2026-'+monthNum) && ad >= '2026-07-01';
+        });
         const byDate = {};
         items.forEach(d => {
             const date = d.arrivalDate||'';
@@ -453,56 +457,65 @@
         if (!sortedDates.length) {
             daysHtml = '<div class="rs-empty">ไม่มีรายการในเดือนนี้</div>';
         } else {
+            const GROUP_LABEL = ['จอยหน้างาน','เหมา','ส่วนตัว'];
+            const GROUP_HEADER_BG = ['#1a6a9a','#b7950b','#555'];
             sortedDates.forEach(date => {
-                const dayItems = [...byDate[date]].sort((a,b) => VEHICLE_GROUP(a.vehicle) - VEHICLE_GROUP(b.vehicle));
                 const [y,m,d] = date.split('-');
                 const _dow = DAYS_TH[new Date(date+'T00:00:00').getDay()];
                 const dayLabel = `วันที่เดินทาง ${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543} (${_dow})`;
-                const rows = dayItems.map((x,i) => {
-                    const phone = x.phone||'-';
-                    const veh = (x.vehicle||'-').replace(/ \(.*?\)/g,'');
-                    const visitD = fmtDate(x.visitDate||x.travelDate);
-                    const arrD = fmtDate(x.arrivalDate);
-                    const wf      = x.tickets?.waterfall||{};
-                    const cv      = x.tickets?.cave||{};
-                    const wfLocal = wf.local||0;
-                    const wfThai  = wf.thai||0;
-                    const wfFor   = wf.foreign||0;
-                    const wfCh    = wf.child||0;
-                    const cvThai  = cv.thai||0;
-                    const cvFor   = cv.foreign||0;
-                    const cvCh    = cv.child||0;
-                    const wantCave = x.wantCave;
-                    const caveTotal = cvThai+cvFor+cvCh;
-                    const wfStr = `นอกพื้นที่ ${wfThai}` + (wfFor>0?` · ต่างชาติ ${wfFor}`:'') + (wfCh>0?` · เด็ก ${wfCh}`:'') + (wfLocal>0?` · พื้นที่ ${wfLocal}`:'');
-                    const caveLabel = (wantCave && caveTotal > 0) ? `คนไทย ${cvThai}` + (cvFor>0?` · ต่างชาติ ${cvFor}`:'') + (cvCh>0?` · เด็ก ${cvCh}`:'') : '-';
-                    const isPrivate = PRIVATE_VEHICLES.includes(x.vehicle||'');
-                    const pickupTime = x.pickupTime || '';
-                    const rowBg = VEHICLE_BG[VEHICLE_GROUP(x.vehicle)];
-                    return `<div class="rs-row" style="background:${rowBg};border-radius:5px;margin-bottom:3px;">
-                        <span class="rs-num">${i+1}.</span>
-                        <div class="rs-content">
-                            <div class="rs-line1" style="font-size:0.85em;color:#222;">
-                                <span class="rs-name" style="font-size:1em;color:#222;">${x.fullName||'-'}</span>
-                                <span style="color:#333;font-weight:600;">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveLabel}</span>
-                                <span class="rs-bid" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
-                                    <span>${x.bookingId||'-'}</span>
-                                    ${!isPrivate ? `<span style="display:flex;gap:4px;align-items:center;">
-                                        <input data-id="${x.id}" type="time" value="${pickupTime}" onchange="savePickupTimeReport(this)" style="width:110px;padding:4px 8px;border:1px solid #ccc;border-radius:5px;font-family:'Prompt';font-size:0.9em;text-align:center;" lang="th" step="60">
-                                        <button onclick="savePickupTimeReport(this.previousElementSibling)" style="padding:2px 7px;background:var(--dark-green);color:white;border:none;border-radius:5px;font-size:0.75em;cursor:pointer;">✓</button>
-                                    </span>` : ''}
-                                </span>
+                const groups = [[],[],[]];
+                byDate[date].forEach(x => groups[VEHICLE_GROUP(x.vehicle)].push(x));
+                let groupsHtml = '';
+                let globalIdx = 1;
+                groups.forEach((grp, gi) => {
+                    if (!grp.length) return;
+                    groupsHtml += `<div style="margin-bottom:8px;">
+                        <div style="background:${GROUP_HEADER_BG[gi]};color:white;font-family:'Kanit';font-size:0.78em;font-weight:700;padding:3px 10px;border-radius:4px;margin-bottom:4px;">${GROUP_LABEL[gi]}</div>`;
+                    grp.forEach(x => {
+                        const veh = (x.vehicle||'-').replace(/ \(.*?\)/g,'');
+                        const visitD = fmtDate(x.visitDate||x.travelDate);
+                        const arrD = fmtDate(x.arrivalDate);
+                        const wf = x.tickets?.waterfall||{};
+                        const cv = x.tickets?.cave||{};
+                        const wfLocal = wf.local||0, wfThai = wf.thai||0, wfFor = wf.foreign||0, wfCh = wf.child||0;
+                        const cvThai = cv.thai||0, cvFor = cv.foreign||0, cvCh = cv.child||0;
+                        const wantCave = x.wantCave;
+                        const caveTotal = cvThai+cvFor+cvCh;
+                        const wfStr = `นอกพื้นที่ ${wfThai}`+(wfFor>0?` · ต่างชาติ ${wfFor}`:'')+( wfCh>0?` · เด็ก ${wfCh}`:'')+( wfLocal>0?` · พื้นที่ ${wfLocal}`:'');
+                        const caveLabel = (wantCave&&caveTotal>0)?`คนไทย ${cvThai}`+(cvFor>0?` · ต่างชาติ ${cvFor}`:'')+( cvCh>0?` · เด็ก ${cvCh}`:''):'-';
+                        const isPrivate = PRIVATE_VEHICLES.includes(x.vehicle||'');
+                        const pickupTime = x.pickupTime||'';
+                        const rowBg = VEHICLE_BG[gi];
+                        groupsHtml += `<div class="rs-row" style="background:${rowBg};border-radius:5px;margin-bottom:3px;">
+                            <span class="rs-num">${globalIdx++}.</span>
+                            <div class="rs-content">
+                                <div class="rs-line1" style="font-size:0.85em;color:#222;">
+                                    <span class="rs-name" style="font-size:1em;color:#222;">${x.fullName||'-'}</span>
+                                    <span style="color:#333;font-weight:600;">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveLabel}</span>
+                                    <span class="rs-bid" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+                                        <span>${x.bookingId||'-'}</span>
+                                        ${!isPrivate ? `<span style="display:flex;gap:4px;align-items:center;">
+                                            <input data-id="${x.id}" type="text" value="${pickupTime}" placeholder="HH:MM" onchange="savePickupTimeReport(this)" style="width:100%;padding:4px 6px;border:1px solid #ccc;border-radius:5px;font-family:'Prompt';font-size:0.9em;text-align:center;">
+                                            <button onclick="savePickupTimeReport(this.previousElementSibling)" style="padding:2px 7px;background:var(--dark-green);color:white;border:none;border-radius:5px;font-size:0.75em;cursor:pointer;">✓</button>
+                                        </span>` : ''}
+                                    </span>
+                                </div>
+                                <div class="rs-line2" style="font-size:0.85em;color:#222;gap:10px;margin-top:3px;font-weight:500;">
+                                    <span>เดินทาง <strong>${arrD}</strong></span>
+                                    <span>เข้าชม <strong>${visitD}</strong></span>
+                                    <span>${veh}</span>
+                                    <span>${x.phone||'-'}</span>
+                                </div>
                             </div>
-                            <div class="rs-line2" style="font-size:0.85em;color:#222;gap:10px;margin-top:3px;font-weight:500;">
-                                <span>เดินทาง <strong>${arrD}</strong></span>
-                                <span>เข้าชม <strong>${visitD}</strong></span>
-                                <span>${veh}</span>
-                                <span>${x.phone||'-'}</span>
-                            </div>
-                        </div>
-                    </div>`;
-                }).join('');
-                daysHtml += `<div class="rs-day"><div class="rs-day-title">${dayLabel}</div>${rows}</div>`;
+                        </div>`;
+                    });
+                    groupsHtml += '</div>';
+                });
+                const dayId = `day-${date}`;
+                daysHtml += `<div class="rs-day" id="${dayId}"><div class="rs-day-title" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" class="day-check" data-day="${dayId}" style="width:16px;height:16px;cursor:pointer;accent-color:#0A4B33;">
+                    <span>${dayLabel}</span>
+                </div>${groupsHtml}</div>`;
             });
         }
 
@@ -537,14 +550,19 @@
     }
     window.closeReport = function() { document.getElementById('reportModal').classList.remove('open'); }
 
+    function getTargetDays() {
+        const checked = [...document.querySelectorAll('.day-check:checked')].map(c => document.getElementById(c.dataset.day)).filter(Boolean);
+        if (checked.length > 0) return checked;
+        return REPORT_MONTHS.map(m => document.getElementById('sheet-'+m)).filter(Boolean);
+    }
+
     window.downloadJPG = async function() {
-        const sheets = REPORT_MONTHS.map(m => document.getElementById('sheet-'+m)).filter(Boolean);
-        for (let i = 0; i < sheets.length; i++) {
-            const canvas = await html2canvas(sheets[i], { scale:2, backgroundColor:'#ffffff', useCORS:true });
+        const targets = getTargetDays();
+        for (let i = 0; i < targets.length; i++) {
+            const canvas = await html2canvas(targets[i], { scale:2, backgroundColor:'#ffffff', useCORS:true });
             const a = document.createElement('a');
             a.href = canvas.toDataURL('image/jpeg', 0.92);
-            const mName = MONTHS_FULL[parseInt(REPORT_MONTHS[i])-1];
-            a.download = `รายชื่อผู้เข้าชม_${mName}_2569.jpg`;
+            a.download = `รายชื่อผู้เข้าชม_${targets[i].id||i+1}.jpg`;
             a.click();
             await new Promise(r => setTimeout(r, 300));
         }
@@ -552,10 +570,10 @@
 
     window.downloadPDF = async function() {
         const { jsPDF } = window.jspdf;
-        const sheets = REPORT_MONTHS.map(m => document.getElementById('sheet-'+m)).filter(Boolean);
+        const targets = getTargetDays();
         const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-        for (let i = 0; i < sheets.length; i++) {
-            const canvas = await html2canvas(sheets[i], { scale:2, backgroundColor:'#ffffff', useCORS:true });
+        for (let i = 0; i < targets.length; i++) {
+            const canvas = await html2canvas(targets[i], { scale:2, backgroundColor:'#ffffff', useCORS:true });
             const imgData = canvas.toDataURL('image/jpeg', 0.92);
             const pdfW = pdf.internal.pageSize.getWidth();
             const pdfH = (canvas.height / canvas.width) * pdfW;
