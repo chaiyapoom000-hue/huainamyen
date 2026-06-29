@@ -109,10 +109,11 @@
         .rs-row:last-child { border-bottom:none; }
         .rs-num { font-family:'Kanit'; color:#888; min-width:22px; font-size:0.85em; padding-top:1px; }
         .rs-content { flex:1; display:flex; flex-direction:column; gap:2px; }
-        .rs-line1 { display:flex; gap:8px; align-items:baseline; }
+        .rs-line1 { display:flex; gap:6px; align-items:flex-start; flex-wrap:wrap; }
         .rs-line2 { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
-        .rs-name { font-weight:600; color:#222; flex:1; min-width:0; }
-        .rs-bid { font-family:'Kanit'; font-size:0.75em; color:#0A4B33; white-space:nowrap; min-width:120px; text-align:right; }
+        .rs-name { font-weight:600; color:#222; width:100%; }
+        .rs-counts { color:#333; font-weight:600; width:100%; font-size:0.9em; }
+        .rs-bid { font-family:'Kanit'; font-size:0.75em; color:#0A4B33; width:100%; text-align:left; }
         .rs-tag { font-size:0.74em; color:#666; background:#f5f5f5; padding:1px 6px; border-radius:4px; }
         .rs-empty { text-align:center; color:#bbb; font-size:0.85em; padding:20px 0; }
         .rs-footer { margin-top:18px; border-top:1px solid #ddd; padding-top:10px; display:flex; justify-content:flex-end; gap:20px; }
@@ -494,26 +495,26 @@
                         groupsHtml += `<div class="rs-row" style="background:${rowBg};border-radius:5px;margin-bottom:3px;">
                             <span class="rs-num">${globalIdx++}.</span>
                             <div class="rs-content">
-                                <div class="rs-line1" style="font-size:0.85em;color:#222;">
-                                    <span class="rs-name" style="font-size:1em;color:#222;">${x.fullName||'-'}</span>
+                                <div style="font-size:0.85em;color:#222;display:flex;flex-direction:column;gap:2px;">
+                                    <span style="font-weight:700;color:#222;">${x.fullName||'-'}</span>
+                                    <span style="font-family:'Kanit';font-size:0.78em;color:#0A4B33;">${dispBid}</span>
                                     <span style="color:#333;font-weight:600;">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveLabel}</span>
-                                    <span class="rs-bid">${dispBid}</span>
                                 </div>
-                                <div class="rs-line2" style="font-size:0.85em;color:#222;gap:10px;margin-top:3px;font-weight:500;">
+                                <div style="font-size:0.82em;color:#222;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-weight:500;">
                                     <span>เดินทาง <strong>${arrD}</strong></span>
                                     <span>เข้าชม <strong>${visitD}</strong></span>
                                     <span>${veh}</span>
                                     <span>${dispPhone}</span>
                                 </div>
-                                ${!touristMode ? `<div style="display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;">
-                                    ${!isPrivate ? `<div style="display:flex;gap:4px;align-items:center;flex:1;min-width:140px;">
-                                        <span style="font-size:0.8em;color:#555;white-space:nowrap;">เวลารับส่ง</span>
-                                        <input data-id="${x.id}" type="text" value="${pickupTime}" placeholder="HH:MM" onchange="savePickupTimeReport(this)" style="flex:1;padding:6px 10px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:1em;text-align:center;">
+                                ${!touristMode ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
+                                    ${!isPrivate ? `<div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:0.8em;color:#555;white-space:nowrap;min-width:64px;">เวลารับส่ง</span>
+                                        <input data-id="${x.id}" type="text" value="${pickupTime}" placeholder="HH:MM" onchange="savePickupTimeReport(this)" style="flex:1;padding:6px 10px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:1em;text-align:center;min-width:0;">
                                         <button onclick="savePickupTimeReport(this.previousElementSibling)" style="padding:4px 10px;background:var(--dark-green);color:white;border:none;border-radius:6px;font-size:0.85em;cursor:pointer;">✓</button>
-                                    </div>` : `<div style="flex:1;"></div>`}
-                                    <div style="display:flex;gap:4px;align-items:center;flex:2;min-width:180px;">
-                                        <span style="font-size:0.8em;color:#555;white-space:nowrap;">โฮมสเตย์</span>
-                                        <input data-id="${x.id}" type="text" value="${homestay}" placeholder="ชื่อโฮมสเตย์" onchange="saveHomestayReport(this)" style="flex:1;padding:6px 10px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:1em;">
+                                    </div>` : ''}
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:0.8em;color:#555;white-space:nowrap;min-width:64px;">โฮมสเตย์</span>
+                                        <input data-id="${x.id}" type="text" value="${homestay}" placeholder="ชื่อโฮมสเตย์" onchange="saveHomestayReport(this)" style="flex:1;padding:6px 10px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:1em;min-width:0;">
                                         <button onclick="saveHomestayReport(this.previousElementSibling)" style="padding:4px 10px;background:#1a6a9a;color:white;border:none;border-radius:6px;font-size:0.85em;cursor:pointer;">✓</button>
                                     </div>
                                 </div>` : ''}
