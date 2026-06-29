@@ -98,7 +98,8 @@
         .btn-dl-pdf:hover { background:#c0392b; }
         .btn-report-close { background:transparent; border:1.5px solid rgba(255,255,255,0.4); color:white; padding:6px 14px; border-radius:7px; font-family:'Kanit'; font-size:0.85em; cursor:pointer; }
         .report-scroll { flex:1; overflow-y:auto; padding:24px 16px; background:#888; display:flex; flex-direction:column; align-items:center; gap:24px; }
-        .report-sheet { background:white; width:100%; max-width:680px; padding:32px 36px; border-radius:4px; box-shadow:0 4px 20px rgba(0,0,0,0.25); page-break-after:always; }
+        .report-sheet { background:white; width:100%; max-width:680px; padding:24px 16px; border-radius:4px; box-shadow:0 4px 20px rgba(0,0,0,0.25); page-break-after:always; }
+        @media(min-width:520px){ .report-sheet { padding:32px 36px; } }
         .rs-header { text-align:center; border-bottom:2px solid #0A4B33; padding-bottom:14px; margin-bottom:18px; }
         .rs-header h2 { font-family:'Kanit'; font-size:1.1rem; color:#0A4B33; font-weight:700; }
         .rs-header p { font-size:0.78em; color:#888; margin-top:3px; }
@@ -159,7 +160,8 @@
             <button class="btn-filter btn-apply" onclick="applyFilter()">กรอง</button>
             <button class="btn-filter btn-clear" onclick="clearFilter()">ล้าง</button>
             <button class="btn-filter btn-export" onclick="exportCSV()">⬇ Export CSV</button>
-            <button class="btn-filter" style="background:#e8f5e9;color:#1b5e20;" onclick="openReport()">รายชื่อผู้เข้าชม</button>
+            <button class="btn-filter" style="background:#e8f5e9;color:#1b5e20;" onclick="openReport(false)">รายชื่อผู้เข้าชม (ติดต่อรถ)</button>
+            <button class="btn-filter" style="background:#eaf4fb;color:#1a6a9a;" onclick="openReport(true)">รายชื่อผู้เข้าชม (นทท.)</button>
         </div>
 
         <div class="section-heading">สรุป</div>
@@ -429,7 +431,7 @@
     const REPORT_MONTHS = ['07','08','09','10'];
     const DAYS_TH = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'];
 
-    function buildReportSheet(monthNum) {
+    function buildReportSheet(monthNum, touristMode=false) {
         const monthName = MONTHS_FULL[parseInt(monthNum)-1];
         const year = 2569;
         const VEHICLE_GROUP = v => {
@@ -485,32 +487,36 @@
                         const pickupTime = x.pickupTime||'';
                         const rowBg = VEHICLE_BG[gi];
                         const homestay = x.homestay||'';
+                        const phone = x.phone||'-';
+                        const dispPhone = touristMode ? (phone.length>=4 ? phone.slice(0,-4)+'XXXX' : phone) : phone;
+                        const bid = x.bookingId||'-';
+                        const dispBid = touristMode ? (bid.length>=2 ? bid.slice(0,-2)+'XX' : bid) : bid;
                         groupsHtml += `<div class="rs-row" style="background:${rowBg};border-radius:5px;margin-bottom:3px;">
                             <span class="rs-num">${globalIdx++}.</span>
                             <div class="rs-content">
                                 <div class="rs-line1" style="font-size:0.85em;color:#222;">
                                     <span class="rs-name" style="font-size:1em;color:#222;">${x.fullName||'-'}</span>
                                     <span style="color:#333;font-weight:600;">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveLabel}</span>
-                                    <span class="rs-bid">${x.bookingId||'-'}</span>
+                                    <span class="rs-bid">${dispBid}</span>
                                 </div>
                                 <div class="rs-line2" style="font-size:0.85em;color:#222;gap:10px;margin-top:3px;font-weight:500;">
                                     <span>เดินทาง <strong>${arrD}</strong></span>
                                     <span>เข้าชม <strong>${visitD}</strong></span>
                                     <span>${veh}</span>
-                                    <span>${x.phone||'-'}</span>
+                                    <span>${dispPhone}</span>
                                 </div>
-                                <div style="display:flex;gap:8px;margin-top:6px;align-items:center;">
-                                    ${!isPrivate ? `<div style="display:flex;gap:4px;align-items:center;flex:1;">
+                                ${!touristMode ? `<div style="display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;">
+                                    ${!isPrivate ? `<div style="display:flex;gap:4px;align-items:center;flex:1;min-width:140px;">
                                         <span style="font-size:0.8em;color:#555;white-space:nowrap;">เวลารับส่ง</span>
                                         <input data-id="${x.id}" type="text" value="${pickupTime}" placeholder="HH:MM" onchange="savePickupTimeReport(this)" style="flex:1;padding:6px 10px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:1em;text-align:center;">
                                         <button onclick="savePickupTimeReport(this.previousElementSibling)" style="padding:4px 10px;background:var(--dark-green);color:white;border:none;border-radius:6px;font-size:0.85em;cursor:pointer;">✓</button>
                                     </div>` : `<div style="flex:1;"></div>`}
-                                    <div style="display:flex;gap:4px;align-items:center;flex:2;">
+                                    <div style="display:flex;gap:4px;align-items:center;flex:2;min-width:180px;">
                                         <span style="font-size:0.8em;color:#555;white-space:nowrap;">โฮมสเตย์</span>
                                         <input data-id="${x.id}" type="text" value="${homestay}" placeholder="ชื่อโฮมสเตย์" onchange="saveHomestayReport(this)" style="flex:1;padding:6px 10px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:1em;">
                                         <button onclick="saveHomestayReport(this.previousElementSibling)" style="padding:4px 10px;background:#1a6a9a;color:white;border:none;border-radius:6px;font-size:0.85em;cursor:pointer;">✓</button>
                                     </div>
-                                </div>
+                                </div>` : ''}
                             </div>
                         </div>`;
                     });
@@ -561,8 +567,8 @@
         } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
     }
 
-    window.openReport = function() {
-        document.getElementById('reportSheets').innerHTML = REPORT_MONTHS.map(m => buildReportSheet(m)).join('');
+    window.openReport = function(touristMode=false) {
+        document.getElementById('reportSheets').innerHTML = REPORT_MONTHS.map(m => buildReportSheet(m, touristMode)).join('');
         document.getElementById('reportModal').classList.add('open');
     }
     window.closeReport = function() { document.getElementById('reportModal').classList.remove('open'); }
