@@ -127,10 +127,20 @@
 </head>
 <body>
 
-<div class="quota-float">
-    <div class="qf-label">ยอดเข้าชมวันนี้</div>
-    <div class="qf-count" id="todayCount">กำลังโหลด...</div>
-    <div class="qf-bar-wrap"><div class="qf-bar" id="todayBar" style="width:0%"></div></div>
+<button onclick="openTouristReport()" style="position:fixed;top:16px;right:16px;z-index:100;background:#1a6a9a;color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Kanit';font-size:0.95em;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,0.2);">รายชื่อนักท่องเที่ยว</button>
+
+<!-- Tourist Report Modal -->
+<div id="touristReportModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);flex-direction:column;">
+    <div style="background:#0A4B33;color:white;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <span style="font-family:'Kanit';font-size:1em;font-weight:700;">รายชื่อนักท่องเที่ยว</span>
+        <button onclick="closeTouristReport()" style="background:rgba(255,255,255,0.15);color:white;border:none;border-radius:8px;padding:6px 14px;font-family:'Kanit';cursor:pointer;">✕ ปิด</button>
+    </div>
+    <div style="position:relative;flex:1;overflow:hidden;display:flex;">
+        <div id="touristReportScroll" style="flex:1;overflow-y:auto;padding:16px;background:#888;display:flex;flex-direction:column;align-items:center;gap:16px;">
+            <div id="touristReportSheets" style="width:100%;max-width:680px;"></div>
+        </div>
+        <div id="touristScrollIndicator" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(30,30,30,0.82);color:white;font-family:'Kanit';font-size:0.85em;font-weight:700;padding:8px 14px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity 0.3s;white-space:nowrap;z-index:10;"></div>
+    </div>
 </div>
 
 <div class="hero">
@@ -258,6 +268,186 @@
     }
 
     loadTodayStats();
+
+    // Tourist Report
+    const TR_MONTHS = ['07','08','09','10'];
+    const TR_MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    const TR_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    const TR_DAYS_TH = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'];
+    const TR_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    let trData = [], trLoaded = false, _trScrollTimer = null;
+
+    function trFmtDate(str) {
+        if (!str) return '-';
+        const [y,m,d] = str.split('-');
+        return `${parseInt(d)} ${TR_MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543}`;
+    }
+
+    function trVehicleGroup(v) {
+        if (!v) return 3;
+        if (v.includes('จอยหน้างานรถกระบะ')) return 0;
+        if (v.includes('เหมา')) return 1;
+        if (v.includes('รถมอเตอร์ไซค์รับส่งจากชุมชน')) return 2;
+        return 3;
+    }
+    const TR_VEH_BG = ['#ede7f6','#fef9e7','#e8f4fd','#f5f5f5'];
+
+    function buildTouristSheet(monthNum) {
+        const monthName = TR_MONTHS_FULL[parseInt(monthNum)-1];
+        const items = trData.filter(d => {
+            const vd = d.visitDate||d.travelDate||'';
+            const ad = d.arrivalDate||'';
+            return vd.startsWith('2026-'+monthNum) && ad >= '2026-07-01';
+        });
+        const byDate = {};
+        items.forEach(d => {
+            const date = d.arrivalDate||'';
+            if (!byDate[date]) byDate[date] = [];
+            byDate[date].push(d);
+        });
+        const sortedDates = Object.keys(byDate).sort();
+        const totalPeople = items.reduce((s,d)=>s+(d.totalPeopleCount||0),0);
+        let daysHtml = '';
+        if (!sortedDates.length) {
+            daysHtml = '<div style="color:#888;text-align:center;padding:20px;">ไม่มีรายการในเดือนนี้</div>';
+        } else {
+            sortedDates.forEach(date => {
+                const [y,m,d] = date.split('-');
+                const _dow = TR_DAYS_TH[new Date(date+'T00:00:00').getDay()];
+                const dayLabel = `วันที่เดินทาง ${parseInt(d)} ${TR_MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543} (${_dow})`;
+                const groups = [[],[],[],[]];
+                byDate[date].forEach(x => groups[trVehicleGroup(x.vehicle)].push(x));
+                let groupsHtml = '';
+                let idx = 1;
+                groups.forEach((grp,gi) => {
+                    if (!grp.length) return;
+                    groupsHtml += '<div style="margin-bottom:4px;">';
+                    grp.forEach(x => {
+                        const veh = (x.vehicle||'-').replace(/ \(.*?\)/g,'');
+                        const visitD = trFmtDate(x.visitDate||x.travelDate);
+                        const arrD = trFmtDate(x.arrivalDate);
+                        const wf = x.tickets?.waterfall||{};
+                        const cv = x.tickets?.cave||{};
+                        const wfThai=wf.thai||0, wfFor=wf.foreign||0, wfCh=wf.child||0, wfLocal=wf.local||0;
+                        const cvThai=cv.thai||0, cvFor=cv.foreign||0, cvCh=cv.child||0;
+                        const caveTotal=cvThai+cvFor+cvCh;
+                        const wfStr=`นอกพื้นที่ ${wfThai}`+(wfFor>0?` · ต่างชาติ ${wfFor}`:'')+( wfCh>0?` · เด็ก ${wfCh}`:'')+( wfLocal>0?` · พื้นที่ ${wfLocal}`:'');
+                        const caveLabel=(x.wantCave&&caveTotal>0)?`คนไทย ${cvThai}`+(cvFor>0?` · ต่างชาติ ${cvFor}`:'')+( cvCh>0?` · เด็ก ${cvCh}`:''):'-';
+                        const phone=x.phone||'-';
+                        const dispPhone=phone.length>=4?phone.slice(0,-4)+'XXXX':phone;
+                        const bid=x.bookingId||'-';
+                        const dispBid=bid.length>=2?bid.slice(0,-2)+'XX':bid;
+                        groupsHtml+=`<div style="background:${TR_VEH_BG[gi]};border-radius:5px;margin-bottom:3px;display:flex;gap:6px;padding:8px 10px;">
+                            <span style="font-family:'Kanit';font-size:0.8em;color:#888;min-width:20px;">${idx++}.</span>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:0.85em;display:flex;flex-direction:column;gap:2px;">
+                                    <span style="font-weight:700;color:#222;">${x.fullName||'-'}</span>
+                                    <span style="font-family:'Kanit';font-size:0.78em;color:#0A4B33;">${dispBid}</span>
+                                    <span style="color:#333;font-weight:600;">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveLabel}</span>
+                                </div>
+                                <div style="font-size:0.82em;color:#222;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-weight:500;">
+                                    <span>เดินทาง <strong>${arrD}</strong></span>
+                                    <span>เข้าชม <strong>${visitD}</strong></span>
+                                    <span>${veh}</span>
+                                    <span>${dispPhone}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                    groupsHtml += '</div>';
+                });
+                daysHtml += `<div class="tr-day" id="trday-${date}" style="margin-bottom:16px;">
+                    <div style="font-family:'Kanit';font-size:0.88em;font-weight:700;color:#0A4B33;background:#f0f7f4;padding:5px 10px;border-radius:6px;margin-bottom:6px;">${dayLabel}</div>
+                    ${groupsHtml}
+                </div>`;
+            });
+        }
+        return `<div style="background:white;width:100%;border-radius:12px;padding:20px 16px;margin-bottom:16px;">
+            <div style="text-align:center;margin-bottom:16px;border-bottom:2px solid #0A4B33;padding-bottom:12px;">
+                <h2 style="font-family:'Kanit';font-size:1.1em;color:#0A4B33;">รายชื่อผู้เข้าชมน้ำตกห้วยน้ำเย็น เดือน${monthName} 2569</h2>
+                <p style="font-size:0.85em;color:#666;">จำนวนรายการ ${items.length} รายการ · รวม ${totalPeople} คน</p>
+            </div>
+            ${daysHtml}
+        </div>`;
+    }
+
+    async function loadTouristData() {
+        const FIREBASE_PROJECT = 'maekhong-waterfall-51445';
+        const FIREBASE_KEY = 'AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4';
+        let allDocs = [], nextPage = null;
+        do {
+            const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/registrations?pageSize=300&key=${FIREBASE_KEY}${nextPage?'&pageToken='+nextPage:''}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            (json.documents||[]).forEach(doc => {
+                const f = doc.fields||{};
+                const get = (k,t='s') => f[k]?.[t+'Value']??null;
+                const getN = k => parseFloat(f[k]?.integerValue||f[k]?.doubleValue||0);
+                const status = get('status');
+                if (status !== 'อนุมัติแล้ว') return;
+                const tickets = {};
+                if (f.tickets?.mapValue?.fields) {
+                    const tf = f.tickets.mapValue.fields;
+                    ['waterfall','cave'].forEach(cat => {
+                        if (tf[cat]?.mapValue?.fields) {
+                            tickets[cat] = {};
+                            Object.entries(tf[cat].mapValue.fields).forEach(([k,v]) => { tickets[cat][k] = parseInt(v.integerValue||v.doubleValue||0); });
+                        }
+                    });
+                }
+                const totalPeopleCount = Object.values(tickets.waterfall||{}).reduce((s,v)=>s+v,0);
+                allDocs.push({
+                    id: doc.name.split('/').pop(),
+                    bookingId: get('bookingId'), fullName: get('fullName'),
+                    phone: get('phone'), visitDate: get('visitDate'), travelDate: get('travelDate'),
+                    arrivalDate: get('arrivalDate'), vehicle: get('vehicle'),
+                    wantCave: f.wantCave?.booleanValue||false,
+                    tickets, totalPeopleCount, status,
+                });
+            });
+            nextPage = json.nextPageToken||null;
+        } while (nextPage);
+        return allDocs;
+    }
+
+    function initTouristScrollIndicator() {
+        const scroll = document.getElementById('touristReportScroll');
+        const indicator = document.getElementById('touristScrollIndicator');
+        if (!scroll||!indicator) return;
+        scroll.onscroll = function() {
+            const days = document.querySelectorAll('.tr-day');
+            const scrollTop = scroll.scrollTop + scroll.clientHeight/2;
+            let current = null;
+            days.forEach(day => { if (day.offsetTop <= scrollTop) current = day; });
+            if (current) {
+                const dateStr = current.id.replace('trday-','');
+                const parts = dateStr.split('-');
+                if (parts.length===3) {
+                    indicator.textContent = `${parseInt(parts[2])} ${TR_MONTHS_SHORT[parseInt(parts[1])-1]}`;
+                    indicator.style.opacity = '1';
+                }
+            }
+            clearTimeout(_trScrollTimer);
+            _trScrollTimer = setTimeout(()=>{ indicator.style.opacity='0'; }, 1200);
+        };
+    }
+
+    window.openTouristReport = async function() {
+        const modal = document.getElementById('touristReportModal');
+        modal.style.display = 'flex';
+        const sheets = document.getElementById('touristReportSheets');
+        sheets.innerHTML = '<div style="color:white;text-align:center;padding:40px;font-family:Kanit;">กำลังโหลด...</div>';
+        if (!trLoaded) {
+            trData = await loadTouristData();
+            trLoaded = true;
+        }
+        sheets.innerHTML = TR_MONTHS.map(m => buildTouristSheet(m)).join('');
+        setTimeout(initTouristScrollIndicator, 100);
+    };
+
+    window.closeTouristReport = function() {
+        document.getElementById('touristReportModal').style.display = 'none';
+    };
 </script>
 </body>
 </html>
