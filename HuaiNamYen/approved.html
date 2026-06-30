@@ -163,6 +163,7 @@
             <button class="btn-filter btn-export" onclick="exportCSV()">⬇ Export CSV</button>
             <button class="btn-filter" style="background:#e8f5e9;color:#1b5e20;" onclick="openReport(false)">รายชื่อผู้เข้าชม (ติดต่อรถ)</button>
             <button class="btn-filter" style="background:#eaf4fb;color:#1a6a9a;" onclick="openReport(true)">รายชื่อผู้เข้าชม (นทท.)</button>
+            <button class="btn-filter" style="background:#fff3e0;color:#e65100;" id="btnSync" onclick="doSyncPublicReport()">⟳ Sync รายชื่อสาธารณะ</button>
         </div>
 
         <div class="section-heading">สรุป</div>
@@ -318,7 +319,19 @@
         allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
         filteredData = [...allData];
         renderTable();
-        syncPublicReport();
+    }
+
+    window.doSyncPublicReport = async function() {
+        const btn = document.getElementById('btnSync');
+        btn.textContent = '⏳ กำลัง Sync...'; btn.disabled = true;
+        try {
+            await syncPublicReport();
+            btn.textContent = '✓ Sync เสร็จแล้ว';
+            setTimeout(() => { btn.textContent = '⟳ Sync รายชื่อสาธารณะ'; btn.disabled = false; }, 2000);
+        } catch(e) {
+            btn.textContent = '✗ Error'; btn.disabled = false;
+            alert('Sync ไม่สำเร็จ: ' + e.message);
+        }
     }
 
     const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
