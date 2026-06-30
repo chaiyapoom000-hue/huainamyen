@@ -170,7 +170,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { initializeFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { initializeFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
     const firebaseConfig = { apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4", authDomain:"maekhong-waterfall-51445.firebaseapp.com", projectId:"maekhong-waterfall-51445", storageBucket:"maekhong-waterfall-51445.firebasestorage.app", messagingSenderId:"40565650481", appId:"1:40565650481:web:9cf6a76cb388c61ea05110" };
     const app = initializeApp(firebaseConfig);
@@ -372,42 +372,15 @@
     }
 
     async function loadTouristData() {
-        const FIREBASE_PROJECT = 'maekhong-waterfall-51445';
-        const FIREBASE_KEY = 'AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4';
-        let allDocs = [], nextPage = null;
-        do {
-            const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/registrations?pageSize=300&key=${FIREBASE_KEY}${nextPage?'&pageToken='+nextPage:''}`;
-            const res = await fetch(url);
-            const json = await res.json();
-            (json.documents||[]).forEach(doc => {
-                const f = doc.fields||{};
-                const get = (k,t='s') => f[k]?.[t+'Value']??null;
-                const getN = k => parseFloat(f[k]?.integerValue||f[k]?.doubleValue||0);
-                const status = get('status');
-                if (status !== 'อนุมัติแล้ว') return;
-                const tickets = {};
-                if (f.tickets?.mapValue?.fields) {
-                    const tf = f.tickets.mapValue.fields;
-                    ['waterfall','cave'].forEach(cat => {
-                        if (tf[cat]?.mapValue?.fields) {
-                            tickets[cat] = {};
-                            Object.entries(tf[cat].mapValue.fields).forEach(([k,v]) => { tickets[cat][k] = parseInt(v.integerValue||v.doubleValue||0); });
-                        }
-                    });
-                }
-                const totalPeopleCount = Object.values(tickets.waterfall||{}).reduce((s,v)=>s+v,0);
-                allDocs.push({
-                    id: doc.name.split('/').pop(),
-                    bookingId: get('bookingId'), fullName: get('fullName'),
-                    phone: get('phone'), visitDate: get('visitDate'), travelDate: get('travelDate'),
-                    arrivalDate: get('arrivalDate'), vehicle: get('vehicle'),
-                    wantCave: f.wantCave?.booleanValue||false,
-                    tickets, totalPeopleCount, status,
-                });
-            });
-            nextPage = json.nextPageToken||null;
-        } while (nextPage);
-        return allDocs;
+        const snap = await getDocs(query(collection(db, 'registrations'), where('status','==','อนุมัติแล้ว')));
+        return snap.docs.map(d => {
+            const x = d.data();
+            const tickets = x.tickets||{};
+            const totalPeopleCount = Object.values(tickets.waterfall||{}).reduce((s,v)=>s+v,0);
+            return { id: d.id, bookingId: x.bookingId, fullName: x.fullName, phone: x.phone,
+                visitDate: x.visitDate, travelDate: x.travelDate, arrivalDate: x.arrivalDate,
+                vehicle: x.vehicle, wantCave: x.wantCave||false, tickets, totalPeopleCount };
+        });
     }
 
     function initTouristScrollIndicator() {
