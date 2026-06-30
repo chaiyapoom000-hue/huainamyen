@@ -372,7 +372,7 @@
     }
 
     async function loadTouristData() {
-        const snap = await getDocs(query(collection(db, 'registrations'), where('status','==','อนุมัติแล้ว')));
+        const snap = await getDocs(collection(db, 'public_report'));
         return snap.docs.map(d => {
             const x = d.data();
             const tickets = x.tickets||{};
