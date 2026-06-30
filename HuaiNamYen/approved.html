@@ -202,8 +202,11 @@
             <button class="btn-report-close" onclick="closeReport()">✕ ปิด</button>
         </div>
     </div>
-    <div class="report-scroll" id="reportScroll">
-        <div id="reportSheets"></div>
+    <div style="position:relative;flex:1;overflow:hidden;display:flex;">
+        <div class="report-scroll" id="reportScroll" style="flex:1;overflow-y:auto;padding:24px 16px;background:#888;display:flex;flex-direction:column;align-items:center;gap:24px;">
+            <div id="reportSheets"></div>
+        </div>
+        <div id="scrollIndicator" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(30,30,30,0.82);color:white;font-family:'Kanit';font-size:0.85em;font-weight:700;padding:8px 14px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity 0.3s;white-space:nowrap;z-index:10;"></div>
     </div>
 </div>
 
@@ -568,11 +571,40 @@
         } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
     }
 
+    const MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    let _scrollTimer = null;
+    function initScrollIndicator() {
+        const scroll = document.getElementById('reportScroll');
+        const indicator = document.getElementById('scrollIndicator');
+        if (!scroll || !indicator) return;
+        scroll.onscroll = function() {
+            const days = document.querySelectorAll('.rs-day');
+            const scrollTop = scroll.scrollTop + scroll.clientHeight / 2;
+            let current = null;
+            days.forEach(day => {
+                if (day.offsetTop <= scrollTop) current = day;
+            });
+            if (current) {
+                const dateStr = current.id.replace('day-','');
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    const d = parseInt(parts[2]);
+                    const mIdx = parseInt(parts[1]) - 1;
+                    indicator.textContent = `${d} ${MONTHS_SHORT[mIdx]}`;
+                    indicator.style.opacity = '1';
+                }
+            }
+            clearTimeout(_scrollTimer);
+            _scrollTimer = setTimeout(() => { indicator.style.opacity = '0'; }, 1200);
+        };
+    }
+
     window.openReport = function(touristMode=false) {
         document.getElementById('reportSheets').innerHTML = REPORT_MONTHS.map(m => buildReportSheet(m, touristMode)).join('');
         const dlBtns = document.querySelectorAll('.btn-dl');
         dlBtns.forEach(b => b.style.display = touristMode ? 'none' : '');
         document.getElementById('reportModal').classList.add('open');
+        setTimeout(initScrollIndicator, 100);
     }
     window.closeReport = function() { document.getElementById('reportModal').classList.remove('open'); }
 
