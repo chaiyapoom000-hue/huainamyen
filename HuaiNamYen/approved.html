@@ -274,12 +274,51 @@
         catch(e) { document.getElementById('loginError').textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'; }
     }
 
+    async function fsSet(col, docId, fields) {
+        const token = await getToken();
+        const firestoreFields = {};
+        function encodeVal(v) {
+            if (typeof v === 'string') return { stringValue: v };
+            if (typeof v === 'boolean') return { booleanValue: v };
+            if (typeof v === 'number') return { integerValue: v };
+            if (v && typeof v === 'object') {
+                const mf = {};
+                for (const [k2,v2] of Object.entries(v)) mf[k2] = encodeVal(v2);
+                return { mapValue: { fields: mf } };
+            }
+            return { nullValue: null };
+        }
+        for (const [k,v] of Object.entries(fields)) firestoreFields[k] = encodeVal(v);
+        await fetch(`${FS_BASE}/${col}/${docId}`, {
+            method:'PATCH', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({ fields: firestoreFields })
+        });
+    }
+
+    async function syncPublicReport() {
+        for (const d of allData) {
+            const phone = d.phone||'-';
+            const bid = d.bookingId||'-';
+            await fsSet('public_report', d.id, {
+                fullName: d.fullName||'-',
+                bookingId: bid.length>=2 ? bid.slice(0,-2)+'XX' : bid,
+                phone: phone.length>=4 ? phone.slice(0,-4)+'XXXX' : phone,
+                arrivalDate: d.arrivalDate||'',
+                visitDate: d.visitDate||d.travelDate||'',
+                vehicle: d.vehicle||'',
+                wantCave: d.wantCave||false,
+                tickets: d.tickets||{},
+            });
+        }
+    }
+
     async function loadData() {
         const all = await fsList('registrations');
         allData = all.filter(d => d.status === 'อนุมัติแล้ว');
         allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
         filteredData = [...allData];
         renderTable();
+        syncPublicReport();
     }
 
     const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
