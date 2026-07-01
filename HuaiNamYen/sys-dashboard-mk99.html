@@ -386,6 +386,7 @@
             <button class="btn-filter btn-refresh" onclick="loadData()">↻ รีเฟรช</button>
             <button class="btn-filter" style="background:#e8f4fd;color:#1a6a9a;" onclick="recalculateQuota()">⟳ คำนวณโควตาใหม่</button>
             <button class="btn-filter btn-export" onclick="exportCSV()">⬇ ส่งออก CSV</button>
+            <button class="btn-filter" style="background:#fff3e0;color:#e65100;" id="btnSyncPublic" onclick="doSyncPublicReport()">⟳ Sync รายชื่อสาธารณะ</button>
             <span class="filter-count" id="filterCount"></span>
         </div>
 
@@ -536,6 +537,53 @@
         const token = await getToken();
         const res = await fetch(`${FS_BASE}/${col}/${docId}`, { method:'DELETE', headers:{ 'Authorization':`Bearer ${token}` } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }
+    async function fsSet(col, docId, data) {
+        const token = await getToken();
+        const fields = {};
+        for (const [k,v] of Object.entries(data)) fields[k] = toValue(v);
+        await fetch(`${FS_BASE}/${col}/${docId}`, {
+            method:'PATCH', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({ fields })
+        });
+    }
+    async function syncPublicReport() {
+        const token = await getToken();
+        const res = await fetch(`${FS_BASE}:runQuery`, {
+            method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({ structuredQuery: { from:[{collectionId:'public_report'}], select:{ fields:[{fieldPath:'__name__'}] } } })
+        });
+        const rows = await res.json();
+        const existingIds = new Set(rows.filter(r=>r.document).map(r=>r.document.name.split('/').pop()));
+        const approved = allData.filter(d => d.status === 'อนุมัติแล้ว');
+        const toSync = approved.filter(d => !existingIds.has(d.id));
+        for (const d of toSync) {
+            const phone = d.phone||'-';
+            const bid = d.bookingId||'-';
+            await fsSet('public_report', d.id, {
+                fullName: d.fullName||'-',
+                bookingId: bid.length>=2 ? bid.slice(0,-2)+'XX' : bid,
+                phone: phone.length>=4 ? phone.slice(0,-4)+'XXXX' : phone,
+                arrivalDate: d.arrivalDate||'',
+                visitDate: d.visitDate||d.travelDate||'',
+                vehicle: d.vehicle||'',
+                wantCave: d.wantCave||false,
+                tickets: d.tickets||{},
+            });
+        }
+        return toSync.length;
+    }
+    window.doSyncPublicReport = async function() {
+        const btn = document.getElementById('btnSyncPublic');
+        btn.textContent = '⏳ กำลัง Sync...'; btn.disabled = true;
+        try {
+            const count = await syncPublicReport();
+            btn.textContent = count > 0 ? `✓ Sync ${count} รายการใหม่` : '✓ ไม่มีรายการใหม่';
+            setTimeout(() => { btn.textContent = '⟳ Sync รายชื่อสาธารณะ'; btn.disabled = false; }, 2000);
+        } catch(e) {
+            btn.textContent = '✗ Error'; btn.disabled = false;
+            alert('Sync ไม่สำเร็จ: ' + e.message);
+        }
     }
 
     let allData = [], filteredData = [], currentDocId = null;
