@@ -297,7 +297,17 @@
     }
 
     async function syncPublicReport() {
-        for (const d of allData) {
+        // โหลด public_report ที่มีอยู่แล้วเพื่อเช็คว่า id ไหนมีแล้ว
+        const token = await getToken();
+        const res = await fetch(`${FS_BASE}:runQuery`, {
+            method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({ structuredQuery: { from:[{collectionId:'public_report'}], select:{ fields:[{fieldPath:'__name__'}] } } })
+        });
+        const rows = await res.json();
+        const existingIds = new Set(rows.filter(r=>r.document).map(r=>r.document.name.split('/').pop()));
+
+        const toSync = allData.filter(d => !existingIds.has(d.id));
+        for (const d of toSync) {
             const phone = d.phone||'-';
             const bid = d.bookingId||'-';
             await fsSet('public_report', d.id, {
@@ -311,6 +321,7 @@
                 tickets: d.tickets||{},
             });
         }
+        return toSync.length;
     }
 
     async function loadData() {
@@ -325,8 +336,8 @@
         const btn = document.getElementById('btnSync');
         btn.textContent = '⏳ กำลัง Sync...'; btn.disabled = true;
         try {
-            await syncPublicReport();
-            btn.textContent = '✓ Sync เสร็จแล้ว';
+            const count = await syncPublicReport();
+            btn.textContent = count > 0 ? `✓ Sync ${count} รายการใหม่` : '✓ ไม่มีรายการใหม่';
             setTimeout(() => { btn.textContent = '⟳ Sync รายชื่อสาธารณะ'; btn.disabled = false; }, 2000);
         } catch(e) {
             btn.textContent = '✗ Error'; btn.disabled = false;
