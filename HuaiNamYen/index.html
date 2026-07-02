@@ -177,7 +177,7 @@
     const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
     // flatpickr — ล็อกวันพุธในปฏิทิน
-    const _fpMin = new Date(); _fpMin.setHours(0,0,0,0); _fpMin.setDate(_fpMin.getDate() + 4);
+    const _fpMin = new Date(); _fpMin.setHours(0,0,0,0); _fpMin.setDate(_fpMin.getDate() + 3);
     const _fpMinStr = _fpMin.toISOString().split('T')[0];
     flatpickr('#checkDate', {
         dateFormat: 'Y-m-d',
@@ -232,7 +232,7 @@
         }
 
         const _today = new Date(); _today.setHours(0,0,0,0);
-        const _minD = new Date(_today); _minD.setDate(_minD.getDate() + 4);
+        const _minD = new Date(_today); _minD.setDate(_minD.getDate() + 3);
         const _sel = new Date(date + 'T00:00:00');
         if (_sel < _minD) {
             const used2 = await countForDate(date);
