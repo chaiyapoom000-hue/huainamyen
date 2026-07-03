@@ -549,29 +549,39 @@
     }
     async function syncPublicReport() {
         const token = await getToken();
-        const res = await fetch(`${FS_BASE}:runQuery`, {
-            method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-            body: JSON.stringify({ structuredQuery: { from:[{collectionId:'public_report'}], select:{ fields:[{fieldPath:'__name__'}] } } })
-        });
-        const rows = await res.json();
-        const existingIds = new Set(rows.filter(r=>r.document).map(r=>r.document.name.split('/').pop()));
         const approved = allData.filter(d => d.status === 'อนุมัติแล้ว');
-        const toSync = approved.filter(d => !existingIds.has(d.id));
-        for (const d of toSync) {
+        // batch write ทุก record ใน 1 request
+        const writes = approved.map(d => {
             const phone = d.phone||'-';
             const bid = d.bookingId||'-';
-            await fsSet('public_report', d.id, {
-                fullName: d.fullName||'-',
-                bookingId: bid.length>=2 ? bid.slice(0,-2)+'XX' : bid,
-                phone: phone.length>=4 ? phone.slice(0,-4)+'XXXX' : phone,
-                arrivalDate: d.arrivalDate||'',
-                visitDate: d.visitDate||d.travelDate||'',
-                vehicle: d.vehicle||'',
-                wantCave: d.wantCave||false,
-                tickets: d.tickets||{},
+            const fields = {};
+            const enc = v => toValue(v);
+            fields.fullName = enc(d.fullName||'-');
+            fields.bookingId = enc(bid.length>=2 ? bid.slice(0,-2)+'XX' : bid);
+            fields.phone = enc(phone.length>=4 ? phone.slice(0,-4)+'XXXX' : phone);
+            fields.arrivalDate = enc(d.arrivalDate||'');
+            fields.visitDate = enc(d.visitDate||d.travelDate||'');
+            fields.vehicle = enc(d.vehicle||'');
+            fields.wantCave = enc(d.wantCave||false);
+            fields.tickets = enc(d.tickets||{});
+            return {
+                update: {
+                    name: `projects/maekhong-waterfall-51445/databases/(default)/documents/public_report/${d.id}`,
+                    fields
+                }
+            };
+        });
+        // Firestore batch write รองรับสูงสุด 500 ต่อครั้ง
+        const CHUNK = 500;
+        for (let i = 0; i < writes.length; i += CHUNK) {
+            const chunk = writes.slice(i, i + CHUNK);
+            const res = await fetch(`https://firestore.googleapis.com/v1/projects/maekhong-waterfall-51445/databases/(default)/documents:batchWrite`, {
+                method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+                body: JSON.stringify({ writes: chunk })
             });
+            if (!res.ok) throw new Error(await res.text());
         }
-        return toSync.length;
+        return approved.length;
     }
     window.doSyncPublicReport = async function() {
         const btn = document.getElementById('btnSyncPublic');
@@ -929,26 +939,44 @@
                         </div>
                     </div>
                 </div>
-                <div class="mf-full"><div class="mf-label">เข้าชมน้ำตก (พื้นที่/นอกพื้นที่/ต่างชาติ/เด็ก)</div>
-                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
-                        <input type="number" id="wfEditLocal" min="0" value="${tk.local||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
-                        <span style="color:#888;">/</span>
-                        <input type="number" id="wfEditThai" min="0" value="${tk.thai||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
-                        <span style="color:#888;">/</span>
-                        <input type="number" id="wfEditForeign" min="0" value="${tk.foreign||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
-                        <span style="color:#888;">/</span>
-                        <input type="number" id="wfEditChild" min="0" value="${tk.child||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
-                        <button onclick="saveWaterfallCount()" style="padding:5px 12px;background:#0A4B33;color:white;border:none;border-radius:6px;font-family:'Kanit';font-size:0.85em;cursor:pointer;">✓ บันทึก</button>
+                <div class="mf-full">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div><div class="mf-label">เข้าชมน้ำตก (พื้นที่/นอกพื้นที่/ต่างชาติ/เด็ก)</div><div class="mf-value" id="wfDisplay">${tk.local||0} / ${tk.thai||0} / ${tk.foreign||0} / ${tk.child||0}</div></div>
+                        <button onclick="toggleWfEditForm()" style="background:none;border:none;color:var(--mint-green);font-size:0.82em;font-family:'Prompt';cursor:pointer;text-decoration:underline;padding:0;">แก้ไข</button>
+                    </div>
+                    <div id="wfEditForm" style="display:none;margin-top:8px;">
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                            <input type="number" id="wfEditLocal" min="0" value="${tk.local||0}" style="width:60px;padding:7px 8px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;text-align:center;">
+                            <span style="color:#888;">/</span>
+                            <input type="number" id="wfEditThai" min="0" value="${tk.thai||0}" style="width:60px;padding:7px 8px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;text-align:center;">
+                            <span style="color:#888;">/</span>
+                            <input type="number" id="wfEditForeign" min="0" value="${tk.foreign||0}" style="width:60px;padding:7px 8px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;text-align:center;">
+                            <span style="color:#888;">/</span>
+                            <input type="number" id="wfEditChild" min="0" value="${tk.child||0}" style="width:60px;padding:7px 8px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;text-align:center;">
+                        </div>
+                        <div class="save-row" style="margin-top:8px;">
+                            <button class="btn-save-date" onclick="saveWaterfallCount()">บันทึก</button>
+                            <button class="btn-cancel-edit" onclick="toggleWfEditForm()">ยกเลิก</button>
+                        </div>
                     </div>
                 </div>
-                <div class="mf-full"><div class="mf-label">เข้าชมถ้ำ (ไทย/ต่างชาติ/เด็ก)</div>
-                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
-                        <input type="number" id="caveEditThai" min="0" value="${(d.tickets?.cave?.thai)||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
-                        <span style="color:#888;">/</span>
-                        <input type="number" id="caveEditForeign" min="0" value="${(d.tickets?.cave?.foreign)||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
-                        <span style="color:#888;">/</span>
-                        <input type="number" id="caveEditChild" min="0" value="${(d.tickets?.cave?.child)||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
-                        <button onclick="saveCaveCount()" style="padding:5px 12px;background:#0A4B33;color:white;border:none;border-radius:6px;font-family:'Kanit';font-size:0.85em;cursor:pointer;">✓ บันทึก</button>
+                <div class="mf-full">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div><div class="mf-label">เข้าชมถ้ำ (ไทย/ต่างชาติ/เด็ก)</div><div class="mf-value" id="caveDisplay">${d.wantCave ? `${(d.tickets?.cave?.thai)||0} / ${(d.tickets?.cave?.foreign)||0} / ${(d.tickets?.cave?.child)||0}` : '✗'}</div></div>
+                        <button onclick="toggleCaveEditForm()" style="background:none;border:none;color:var(--mint-green);font-size:0.82em;font-family:'Prompt';cursor:pointer;text-decoration:underline;padding:0;">แก้ไข</button>
+                    </div>
+                    <div id="caveEditForm" style="display:none;margin-top:8px;">
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                            <input type="number" id="caveEditThai" min="0" value="${(d.tickets?.cave?.thai)||0}" style="width:60px;padding:7px 8px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;text-align:center;">
+                            <span style="color:#888;">/</span>
+                            <input type="number" id="caveEditForeign" min="0" value="${(d.tickets?.cave?.foreign)||0}" style="width:60px;padding:7px 8px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;text-align:center;">
+                            <span style="color:#888;">/</span>
+                            <input type="number" id="caveEditChild" min="0" value="${(d.tickets?.cave?.child)||0}" style="width:60px;padding:7px 8px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;text-align:center;">
+                        </div>
+                        <div class="save-row" style="margin-top:8px;">
+                            <button class="btn-save-date" onclick="saveCaveCount()">บันทึก</button>
+                            <button class="btn-cancel-edit" onclick="toggleCaveEditForm()">ยกเลิก</button>
+                        </div>
                     </div>
                 </div>
                 <div><div class="mf-label">ยอดชำระ</div><div class="mf-value">${(d.totalAmount||0).toLocaleString()} บาท</div></div>
@@ -1248,6 +1276,15 @@
         });
     }
 
+    window.toggleWfEditForm = function() {
+        const f = document.getElementById('wfEditForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+    window.toggleCaveEditForm = function() {
+        const f = document.getElementById('caveEditForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
     window.saveWaterfallCount = async function() {
         if (!currentDocId) return;
         const item = allData.find(x=>x.id===currentDocId);
@@ -1257,11 +1294,13 @@
         const foreign = parseInt(document.getElementById('wfEditForeign').value)||0;
         const child = parseInt(document.getElementById('wfEditChild').value)||0;
         const newTickets = { waterfall: {local,thai,foreign,child}, cave: item.tickets?.cave||{thai:0,foreign:0,child:0} };
-        const wantCave = item.wantCave||false;
         try {
-            await saveTickets(newTickets, wantCave, ['wfEditLocal','wfEditThai','wfEditForeign','wfEditChild']);
+            await saveTickets(newTickets, item.wantCave||false, []);
             if (!item.tickets) item.tickets = {};
             item.tickets.waterfall = {local,thai,foreign,child};
+            const disp = document.getElementById('wfDisplay');
+            if (disp) disp.textContent = `${local} / ${thai} / ${foreign} / ${child}`;
+            document.getElementById('wfEditForm').style.display = 'none';
         } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
     }
 
@@ -1275,10 +1314,13 @@
         const newTickets = { waterfall: item.tickets?.waterfall||{local:0,thai:0,foreign:0,child:0}, cave: {thai,foreign,child} };
         const wantCave = (thai+foreign+child) > 0;
         try {
-            await saveTickets(newTickets, wantCave, ['caveEditThai','caveEditForeign','caveEditChild']);
+            await saveTickets(newTickets, wantCave, []);
             if (!item.tickets) item.tickets = {};
             item.tickets.cave = {thai,foreign,child};
             item.wantCave = wantCave;
+            const disp = document.getElementById('caveDisplay');
+            if (disp) disp.textContent = wantCave ? `${thai} / ${foreign} / ${child}` : '✗';
+            document.getElementById('caveEditForm').style.display = 'none';
         } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
     }
 

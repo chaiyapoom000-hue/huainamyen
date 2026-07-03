@@ -297,31 +297,42 @@
     }
 
     async function syncPublicReport() {
-        // โหลด public_report ที่มีอยู่แล้วเพื่อเช็คว่า id ไหนมีแล้ว
         const token = await getToken();
-        const res = await fetch(`${FS_BASE}:runQuery`, {
-            method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-            body: JSON.stringify({ structuredQuery: { from:[{collectionId:'public_report'}], select:{ fields:[{fieldPath:'__name__'}] } } })
-        });
-        const rows = await res.json();
-        const existingIds = new Set(rows.filter(r=>r.document).map(r=>r.document.name.split('/').pop()));
-
-        const toSync = allData.filter(d => !existingIds.has(d.id));
-        for (const d of toSync) {
+        function encodeVal(v) {
+            if (typeof v === 'string') return { stringValue: v };
+            if (typeof v === 'boolean') return { booleanValue: v };
+            if (typeof v === 'number') return { integerValue: v };
+            if (v && typeof v === 'object') {
+                const mf = {};
+                for (const [k2,v2] of Object.entries(v)) mf[k2] = encodeVal(v2);
+                return { mapValue: { fields: mf } };
+            }
+            return { nullValue: null };
+        }
+        const writes = allData.map(d => {
             const phone = d.phone||'-';
             const bid = d.bookingId||'-';
-            await fsSet('public_report', d.id, {
-                fullName: d.fullName||'-',
-                bookingId: bid.length>=2 ? bid.slice(0,-2)+'XX' : bid,
-                phone: phone.length>=4 ? phone.slice(0,-4)+'XXXX' : phone,
-                arrivalDate: d.arrivalDate||'',
-                visitDate: d.visitDate||d.travelDate||'',
-                vehicle: d.vehicle||'',
-                wantCave: d.wantCave||false,
-                tickets: d.tickets||{},
+            const fields = {
+                fullName: encodeVal(d.fullName||'-'),
+                bookingId: encodeVal(bid.length>=2 ? bid.slice(0,-2)+'XX' : bid),
+                phone: encodeVal(phone.length>=4 ? phone.slice(0,-4)+'XXXX' : phone),
+                arrivalDate: encodeVal(d.arrivalDate||''),
+                visitDate: encodeVal(d.visitDate||d.travelDate||''),
+                vehicle: encodeVal(d.vehicle||''),
+                wantCave: encodeVal(d.wantCave||false),
+                tickets: encodeVal(d.tickets||{}),
+            };
+            return { update: { name: `projects/maekhong-waterfall-51445/databases/(default)/documents/public_report/${d.id}`, fields } };
+        });
+        const CHUNK = 500;
+        for (let i = 0; i < writes.length; i += CHUNK) {
+            const res = await fetch(`https://firestore.googleapis.com/v1/projects/maekhong-waterfall-51445/databases/(default)/documents:batchWrite`, {
+                method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+                body: JSON.stringify({ writes: writes.slice(i, i+CHUNK) })
             });
+            if (!res.ok) throw new Error(await res.text());
         }
-        return toSync.length;
+        return allData.length;
     }
 
     async function loadData() {
