@@ -929,8 +929,28 @@
                         </div>
                     </div>
                 </div>
-                <div><div class="mf-label">เข้าชมน้ำตก (พื้นที่/นอกพื้นที่/ต่างชาติ/เด็ก)</div><div class="mf-value">${tk.local||0} / ${tk.thai||0} / ${tk.foreign||0} / ${tk.child||0}</div></div>
-                <div><div class="mf-label">เข้าชมถ้ำ (ไทย/ต่างชาติ/เด็ก)</div><div class="mf-value">${d.wantCave ? `${(d.tickets?.cave?.thai)||0} / ${(d.tickets?.cave?.foreign)||0} / ${(d.tickets?.cave?.child)||0}` : '✗'}</div></div>
+                <div class="mf-full"><div class="mf-label">เข้าชมน้ำตก (พื้นที่/นอกพื้นที่/ต่างชาติ/เด็ก)</div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
+                        <input type="number" id="wfEditLocal" min="0" value="${tk.local||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
+                        <span style="color:#888;">/</span>
+                        <input type="number" id="wfEditThai" min="0" value="${tk.thai||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
+                        <span style="color:#888;">/</span>
+                        <input type="number" id="wfEditForeign" min="0" value="${tk.foreign||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
+                        <span style="color:#888;">/</span>
+                        <input type="number" id="wfEditChild" min="0" value="${tk.child||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
+                        <button onclick="saveWaterfallCount()" style="padding:5px 12px;background:#0A4B33;color:white;border:none;border-radius:6px;font-family:'Kanit';font-size:0.85em;cursor:pointer;">✓ บันทึก</button>
+                    </div>
+                </div>
+                <div class="mf-full"><div class="mf-label">เข้าชมถ้ำ (ไทย/ต่างชาติ/เด็ก)</div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
+                        <input type="number" id="caveEditThai" min="0" value="${(d.tickets?.cave?.thai)||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
+                        <span style="color:#888;">/</span>
+                        <input type="number" id="caveEditForeign" min="0" value="${(d.tickets?.cave?.foreign)||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
+                        <span style="color:#888;">/</span>
+                        <input type="number" id="caveEditChild" min="0" value="${(d.tickets?.cave?.child)||0}" style="width:60px;padding:5px 8px;border:1.5px solid #bbb;border-radius:6px;font-family:'Prompt';font-size:0.95em;text-align:center;">
+                        <button onclick="saveCaveCount()" style="padding:5px 12px;background:#0A4B33;color:white;border:none;border-radius:6px;font-family:'Kanit';font-size:0.85em;cursor:pointer;">✓ บันทึก</button>
+                    </div>
+                </div>
                 <div><div class="mf-label">ยอดชำระ</div><div class="mf-value">${(d.totalAmount||0).toLocaleString()} บาท</div></div>
                 <div class="mf-full"><div class="mf-label">ผู้ติดต่อฉุกเฉิน</div><div class="mf-value">${d.emergencyName||'-'} (${d.emergencyRelation||'-'}) ${d.emergencyPhone||'-'}</div></div>
                 <div><div class="mf-label">สถานะ</div><div class="mf-value"><span class="status-badge ${getStatusClass(d.status)}">${d.status||'-'}</span></div></div>
@@ -1200,6 +1220,63 @@
     }
     window.closeModal = function(e) { if(e.target===document.getElementById('modalOverlay')) closeModalDirect(); }
     window.closeModalDirect = function() { document.getElementById('modalOverlay').classList.remove('open'); currentDocId=null; }
+
+    window.saveWaterfallCount = async function() {
+        if (!currentDocId) return;
+        const local = parseInt(document.getElementById('wfEditLocal').value)||0;
+        const thai = parseInt(document.getElementById('wfEditThai').value)||0;
+        const foreign = parseInt(document.getElementById('wfEditForeign').value)||0;
+        const child = parseInt(document.getElementById('wfEditChild').value)||0;
+        try {
+            await fsPatch('registrations', currentDocId, {
+                'tickets.waterfall.local': local,
+                'tickets.waterfall.thai': thai,
+                'tickets.waterfall.foreign': foreign,
+                'tickets.waterfall.child': child,
+            });
+            const item = allData.find(x=>x.id===currentDocId);
+            if (item) {
+                if (!item.tickets) item.tickets = {};
+                if (!item.tickets.waterfall) item.tickets.waterfall = {};
+                item.tickets.waterfall.local = local;
+                item.tickets.waterfall.thai = thai;
+                item.tickets.waterfall.foreign = foreign;
+                item.tickets.waterfall.child = child;
+            }
+            ['wfEditLocal','wfEditThai','wfEditForeign','wfEditChild'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.style.borderColor='#27ae60'; setTimeout(()=>el.style.borderColor='#bbb',1500); }
+            });
+        } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
+    }
+
+    window.saveCaveCount = async function() {
+        if (!currentDocId) return;
+        const thai = parseInt(document.getElementById('caveEditThai').value)||0;
+        const foreign = parseInt(document.getElementById('caveEditForeign').value)||0;
+        const child = parseInt(document.getElementById('caveEditChild').value)||0;
+        try {
+            await fsPatch('registrations', currentDocId, {
+                'tickets.cave.thai': thai,
+                'tickets.cave.foreign': foreign,
+                'tickets.cave.child': child,
+                wantCave: (thai+foreign+child) > 0,
+            });
+            const item = allData.find(x=>x.id===currentDocId);
+            if (item) {
+                if (!item.tickets) item.tickets = {};
+                if (!item.tickets.cave) item.tickets.cave = {};
+                item.tickets.cave.thai = thai;
+                item.tickets.cave.foreign = foreign;
+                item.tickets.cave.child = child;
+                item.wantCave = (thai+foreign+child) > 0;
+            }
+            ['caveEditThai','caveEditForeign','caveEditChild'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.style.borderColor='#27ae60'; setTimeout(()=>el.style.borderColor='#bbb',1500); }
+            });
+        } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
+    }
 
     window.updateStatus = async function(newStatus, rejectReason = '') {
         if(!currentDocId) return;
