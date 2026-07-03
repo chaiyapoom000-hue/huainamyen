@@ -1221,60 +1221,64 @@
     window.closeModal = function(e) { if(e.target===document.getElementById('modalOverlay')) closeModalDirect(); }
     window.closeModalDirect = function() { document.getElementById('modalOverlay').classList.remove('open'); currentDocId=null; }
 
+    async function saveTickets(newTickets, wantCave, highlightIds) {
+        const token = await getToken();
+        const encodeMap = (obj) => {
+            const f = {};
+            for (const [k,v] of Object.entries(obj)) f[k] = toValue(v);
+            return { mapValue: { fields: f } };
+        };
+        const wfFields = { local: toValue(newTickets.waterfall.local||0), thai: toValue(newTickets.waterfall.thai||0), foreign: toValue(newTickets.waterfall.foreign||0), child: toValue(newTickets.waterfall.child||0) };
+        const cvFields = { thai: toValue(newTickets.cave.thai||0), foreign: toValue(newTickets.cave.foreign||0), child: toValue(newTickets.cave.child||0) };
+        const body = { fields: {
+            tickets: { mapValue: { fields: {
+                waterfall: { mapValue: { fields: wfFields } },
+                cave: { mapValue: { fields: cvFields } }
+            }}},
+            wantCave: toValue(wantCave),
+        }};
+        const res = await fetch(`${FS_BASE}/registrations/${currentDocId}?updateMask.fieldPaths=tickets&updateMask.fieldPaths=wantCave`, {
+            method:'PATCH', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        highlightIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.style.borderColor='#27ae60'; setTimeout(()=>el.style.borderColor='#bbb',1500); }
+        });
+    }
+
     window.saveWaterfallCount = async function() {
         if (!currentDocId) return;
+        const item = allData.find(x=>x.id===currentDocId);
+        if (!item) return;
         const local = parseInt(document.getElementById('wfEditLocal').value)||0;
         const thai = parseInt(document.getElementById('wfEditThai').value)||0;
         const foreign = parseInt(document.getElementById('wfEditForeign').value)||0;
         const child = parseInt(document.getElementById('wfEditChild').value)||0;
+        const newTickets = { waterfall: {local,thai,foreign,child}, cave: item.tickets?.cave||{thai:0,foreign:0,child:0} };
+        const wantCave = item.wantCave||false;
         try {
-            await fsPatch('registrations', currentDocId, {
-                'tickets.waterfall.local': local,
-                'tickets.waterfall.thai': thai,
-                'tickets.waterfall.foreign': foreign,
-                'tickets.waterfall.child': child,
-            });
-            const item = allData.find(x=>x.id===currentDocId);
-            if (item) {
-                if (!item.tickets) item.tickets = {};
-                if (!item.tickets.waterfall) item.tickets.waterfall = {};
-                item.tickets.waterfall.local = local;
-                item.tickets.waterfall.thai = thai;
-                item.tickets.waterfall.foreign = foreign;
-                item.tickets.waterfall.child = child;
-            }
-            ['wfEditLocal','wfEditThai','wfEditForeign','wfEditChild'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) { el.style.borderColor='#27ae60'; setTimeout(()=>el.style.borderColor='#bbb',1500); }
-            });
+            await saveTickets(newTickets, wantCave, ['wfEditLocal','wfEditThai','wfEditForeign','wfEditChild']);
+            if (!item.tickets) item.tickets = {};
+            item.tickets.waterfall = {local,thai,foreign,child};
         } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
     }
 
     window.saveCaveCount = async function() {
         if (!currentDocId) return;
+        const item = allData.find(x=>x.id===currentDocId);
+        if (!item) return;
         const thai = parseInt(document.getElementById('caveEditThai').value)||0;
         const foreign = parseInt(document.getElementById('caveEditForeign').value)||0;
         const child = parseInt(document.getElementById('caveEditChild').value)||0;
+        const newTickets = { waterfall: item.tickets?.waterfall||{local:0,thai:0,foreign:0,child:0}, cave: {thai,foreign,child} };
+        const wantCave = (thai+foreign+child) > 0;
         try {
-            await fsPatch('registrations', currentDocId, {
-                'tickets.cave.thai': thai,
-                'tickets.cave.foreign': foreign,
-                'tickets.cave.child': child,
-                wantCave: (thai+foreign+child) > 0,
-            });
-            const item = allData.find(x=>x.id===currentDocId);
-            if (item) {
-                if (!item.tickets) item.tickets = {};
-                if (!item.tickets.cave) item.tickets.cave = {};
-                item.tickets.cave.thai = thai;
-                item.tickets.cave.foreign = foreign;
-                item.tickets.cave.child = child;
-                item.wantCave = (thai+foreign+child) > 0;
-            }
-            ['caveEditThai','caveEditForeign','caveEditChild'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) { el.style.borderColor='#27ae60'; setTimeout(()=>el.style.borderColor='#bbb',1500); }
-            });
+            await saveTickets(newTickets, wantCave, ['caveEditThai','caveEditForeign','caveEditChild']);
+            if (!item.tickets) item.tickets = {};
+            item.tickets.cave = {thai,foreign,child};
+            item.wantCave = wantCave;
         } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
     }
 
