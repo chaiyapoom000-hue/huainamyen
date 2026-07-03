@@ -572,15 +572,14 @@
             };
         });
         // Firestore batch write รองรับสูงสุด 500 ต่อครั้ง
-        const CHUNK = 500;
-        for (let i = 0; i < writes.length; i += CHUNK) {
-            const chunk = writes.slice(i, i + CHUNK);
-            const res = await fetch(`https://firestore.googleapis.com/v1/projects/maekhong-waterfall-51445/databases/(default)/documents:batchWrite`, {
-                method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-                body: JSON.stringify({ writes: chunk })
+        await Promise.all(writes.map(w => {
+            const docName = w.update.name;
+            const docId = docName.split('/').pop();
+            return fetch(`${FS_BASE}/public_report/${docId}`, {
+                method:'PATCH', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+                body: JSON.stringify({ fields: w.update.fields })
             });
-            if (!res.ok) throw new Error(await res.text());
-        }
+        }));
         return approved.length;
     }
     window.doSyncPublicReport = async function() {

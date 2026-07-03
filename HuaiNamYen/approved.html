@@ -324,14 +324,13 @@
             };
             return { update: { name: `projects/maekhong-waterfall-51445/databases/(default)/documents/public_report/${d.id}`, fields } };
         });
-        const CHUNK = 500;
-        for (let i = 0; i < writes.length; i += CHUNK) {
-            const res = await fetch(`https://firestore.googleapis.com/v1/projects/maekhong-waterfall-51445/databases/(default)/documents:batchWrite`, {
-                method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-                body: JSON.stringify({ writes: writes.slice(i, i+CHUNK) })
+        await Promise.all(writes.map(w => {
+            const docId = w.update.name.split('/').pop();
+            return fetch(`${FS_BASE}/public_report/${docId}`, {
+                method:'PATCH', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+                body: JSON.stringify({ fields: w.update.fields })
             });
-            if (!res.ok) throw new Error(await res.text());
-        }
+        }));
         return allData.length;
     }
 
