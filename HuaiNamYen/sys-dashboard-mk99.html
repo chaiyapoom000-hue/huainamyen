@@ -550,8 +550,19 @@
     async function syncPublicReport() {
         const token = await getToken();
         const approved = allData.filter(d => d.status === 'อนุมัติแล้ว');
-        // batch write ทุก record ใน 1 request
-        const writes = approved.map(d => {
+        const approvedIds = new Set(approved.map(d => d.id));
+
+        // โหลด public_report ที่มีอยู่เพื่อเช็คว่าต้องลบอะไรบ้าง
+        const qRes = await fetch(`${FS_BASE}:runQuery`, {
+            method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({ structuredQuery: { from:[{collectionId:'public_report'}], select:{ fields:[{fieldPath:'__name__'}] } } })
+        });
+        const qRows = await qRes.json();
+        const existingIds = qRows.filter(r=>r.document).map(r=>r.document.name.split('/').pop());
+        const toDelete = existingIds.filter(id => !approvedIds.has(id));
+
+        // อัปเดต/เขียน record ที่อนุมัติแล้ว
+        await Promise.all(approved.map(d => {
             const phone = d.phone||'-';
             const bid = d.bookingId||'-';
             const fields = {};
@@ -564,30 +575,25 @@
             fields.vehicle = enc(d.vehicle||'');
             fields.wantCave = enc(d.wantCave||false);
             fields.tickets = enc(d.tickets||{});
-            return {
-                update: {
-                    name: `projects/maekhong-waterfall-51445/databases/(default)/documents/public_report/${d.id}`,
-                    fields
-                }
-            };
-        });
-        // Firestore batch write รองรับสูงสุด 500 ต่อครั้ง
-        await Promise.all(writes.map(w => {
-            const docName = w.update.name;
-            const docId = docName.split('/').pop();
-            return fetch(`${FS_BASE}/public_report/${docId}`, {
+            return fetch(`${FS_BASE}/public_report/${d.id}`, {
                 method:'PATCH', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-                body: JSON.stringify({ fields: w.update.fields })
+                body: JSON.stringify({ fields })
             });
         }));
-        return approved.length;
+
+        // ลบ record ที่ถูกยกเลิก/ไม่อนุมัติ
+        await Promise.all(toDelete.map(id =>
+            fetch(`${FS_BASE}/public_report/${id}`, { method:'DELETE', headers:{'Authorization':'Bearer '+token} })
+        ));
+
+        return { updated: approved.length, deleted: toDelete.length };
     }
     window.doSyncPublicReport = async function() {
         const btn = document.getElementById('btnSyncPublic');
         btn.textContent = '⏳ กำลัง Sync...'; btn.disabled = true;
         try {
-            const count = await syncPublicReport();
-            btn.textContent = count > 0 ? `✓ Sync ${count} รายการใหม่` : '✓ ไม่มีรายการใหม่';
+            const { updated, deleted } = await syncPublicReport();
+            btn.textContent = `✓ อัปเดต ${updated} ลบ ${deleted} รายการ`;
             setTimeout(() => { btn.textContent = '⟳ Sync รายชื่อสาธารณะ'; btn.disabled = false; }, 2000);
         } catch(e) {
             btn.textContent = '✗ Error'; btn.disabled = false;

@@ -324,6 +324,16 @@
             };
             return { update: { name: `projects/maekhong-waterfall-51445/databases/(default)/documents/public_report/${d.id}`, fields } };
         });
+        // โหลด public_report ที่มีอยู่เพื่อเช็คว่าต้องลบอะไรบ้าง
+        const qRes = await fetch(`${FS_BASE}:runQuery`, {
+            method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({ structuredQuery: { from:[{collectionId:'public_report'}], select:{ fields:[{fieldPath:'__name__'}] } } })
+        });
+        const qRows = await qRes.json();
+        const existingIds = qRows.filter(r=>r.document).map(r=>r.document.name.split('/').pop());
+        const approvedIds = new Set(allData.map(d => d.id));
+        const toDelete = existingIds.filter(id => !approvedIds.has(id));
+
         await Promise.all(writes.map(w => {
             const docId = w.update.name.split('/').pop();
             return fetch(`${FS_BASE}/public_report/${docId}`, {
@@ -331,7 +341,10 @@
                 body: JSON.stringify({ fields: w.update.fields })
             });
         }));
-        return allData.length;
+        await Promise.all(toDelete.map(id =>
+            fetch(`${FS_BASE}/public_report/${id}`, { method:'DELETE', headers:{'Authorization':'Bearer '+token} })
+        ));
+        return { updated: allData.length, deleted: toDelete.length };
     }
 
     async function loadData() {
@@ -346,8 +359,8 @@
         const btn = document.getElementById('btnSync');
         btn.textContent = '⏳ กำลัง Sync...'; btn.disabled = true;
         try {
-            const count = await syncPublicReport();
-            btn.textContent = count > 0 ? `✓ Sync ${count} รายการใหม่` : '✓ ไม่มีรายการใหม่';
+            const { updated, deleted } = await syncPublicReport();
+            btn.textContent = `✓ อัปเดต ${updated} ลบ ${deleted} รายการ`;
             setTimeout(() => { btn.textContent = '⟳ Sync รายชื่อสาธารณะ'; btn.disabled = false; }, 2000);
         } catch(e) {
             btn.textContent = '✗ Error'; btn.disabled = false;
