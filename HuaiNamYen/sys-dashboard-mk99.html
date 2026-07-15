@@ -881,7 +881,19 @@
         document.getElementById('modalBody').innerHTML = `
             <div class="modal-bid">${d.bookingId||'ไม่มี Booking ID'}</div>
             <div class="modal-grid">
-                <div><div class="mf-label">ชื่อ-นามสกุล</div><div class="mf-value">${d.fullName||'-'}</div></div>
+                <div class="mf-full">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div><div class="mf-label">ชื่อ-นามสกุล</div><div class="mf-value" id="nameDisplay">${d.fullName||'-'}</div></div>
+                        <button onclick="toggleNameEditForm()" style="background:none;border:none;color:var(--mint-green);font-size:0.82em;font-family:'Prompt';cursor:pointer;text-decoration:underline;padding:0;">แก้ไข</button>
+                    </div>
+                    <div id="nameEditForm" style="display:none;margin-top:8px;">
+                        <input type="text" id="nameEditInput" value="${d.fullName||''}" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Prompt';font-size:0.93em;">
+                        <div class="save-row" style="margin-top:8px;">
+                            <button class="btn-save-date" onclick="saveName()">บันทึก</button>
+                            <button class="btn-cancel-edit" onclick="toggleNameEditForm()">ยกเลิก</button>
+                        </div>
+                    </div>
+                </div>
                 <div><div class="mf-label">เบอร์โทร</div><div class="mf-value">${d.phone||'-'}</div></div>
                 <div><div class="mf-label">อายุ / เพศ</div><div class="mf-value">${d.age||'-'} ปี / ${d.gender||'-'}</div></div>
                 <div><div class="mf-label">สัญชาติ</div><div class="mf-value">${d.nationality||'-'}</div></div>
@@ -1279,6 +1291,25 @@
             const el = document.getElementById(id);
             if (el) { el.style.borderColor='#27ae60'; setTimeout(()=>el.style.borderColor='#bbb',1500); }
         });
+    }
+
+    window.toggleNameEditForm = function() {
+        const f = document.getElementById('nameEditForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+    window.saveName = async function() {
+        if (!currentDocId) return;
+        const val = document.getElementById('nameEditInput').value.trim();
+        if (!val) return;
+        try {
+            await fsPatch('registrations', currentDocId, { fullName: val });
+            const item = allData.find(x=>x.id===currentDocId);
+            if (item) item.fullName = val;
+            const disp = document.getElementById('nameDisplay');
+            if (disp) disp.textContent = val;
+            document.getElementById('nameEditForm').style.display = 'none';
+            renderTable();
+        } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
     }
 
     window.toggleWfEditForm = function() {
