@@ -482,6 +482,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
     const PROJECT_ID = 'maekhong-waterfall-51445';
     const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
@@ -489,6 +490,7 @@
     const firebaseConfig = { apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4", authDomain:"maekhong-waterfall-51445.firebaseapp.com", projectId:"maekhong-waterfall-51445", storageBucket:"maekhong-waterfall-51445.firebasestorage.app", messagingSenderId:"40565650481", appId:"1:40565650481:web:9cf6a76cb388c61ea05110" };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     let currentUser = null;
 
     // ── Firestore REST helpers ──
@@ -516,15 +518,8 @@
     }
     async function getToken() { return await currentUser.getIdToken(); }
     async function fsList(col) {
-        const token = await getToken();
-        const res = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ structuredQuery: { from: [{ collectionId: col }] } })
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const rows = await res.json();
-        return rows.filter(r=>r.document).map(r=>({ id:r.document.name.split('/').pop(), ...parseFields(r.document.fields) }));
+        const snap = await getDocs(collection(db, col));
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
     async function fsGet(col, docId) {
         const token = await getToken();
@@ -655,18 +650,22 @@
             // Auto-cancel รอชำระเงิน เกิน 24 ชั่วโมง
             const now = Date.now();
             const limit24h = 24 * 60 * 60 * 1000;
-            for (const d of allData) {
-                if (d.status !== 'รอชำระเงิน') continue;
+            const toCancel = allData.filter(d => {
+                if (d.status !== 'รอชำระเงิน') return false;
                 const ts = d.timestamp?.seconds ? d.timestamp.seconds * 1000 : null;
-                if (!ts || (now - ts) <= limit24h) continue;
-                await fsPatch('registrations', d.id, { status: 'ยกเลิกโดยผู้จอง' });
-                const qDate = d.visitDate || d.travelDate;
-                const qPeople = d.totalPeopleCount;
-                if (qDate && qPeople) {
-                    const qData = await fsGet('daily_quota', qDate);
-                    await fsPatch('daily_quota', qDate, { count: Math.max(0, (qData?.count||0) - qPeople) });
-                }
-                d.status = 'ยกเลิกโดยผู้จอง';
+                return ts && (now - ts) > limit24h;
+            });
+            if (toCancel.length > 0) {
+                await Promise.all(toCancel.map(async d => {
+                    await fsPatch('registrations', d.id, { status: 'ยกเลิกโดยผู้จอง' });
+                    const qDate = d.visitDate || d.travelDate;
+                    const qPeople = d.totalPeopleCount;
+                    if (qDate && qPeople) {
+                        const qData = await fsGet('daily_quota', qDate);
+                        await fsPatch('daily_quota', qDate, { count: Math.max(0, (qData?.count||0) - qPeople) });
+                    }
+                    d.status = 'ยกเลิกโดยผู้จอง';
+                }));
             }
 
             document.getElementById('loadError').style.display = 'none';
