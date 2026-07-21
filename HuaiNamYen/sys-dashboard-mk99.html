@@ -1280,12 +1280,9 @@
 
     async function saveTickets(newTickets, wantCave, highlightIds) {
         const token = await getToken();
-        const encodeMap = (obj) => {
-            const f = {};
-            for (const [k,v] of Object.entries(obj)) f[k] = toValue(v);
-            return { mapValue: { fields: f } };
-        };
-        const wfFields = { local: toValue(newTickets.waterfall.local||0), thai: toValue(newTickets.waterfall.thai||0), foreign: toValue(newTickets.waterfall.foreign||0), child: toValue(newTickets.waterfall.child||0) };
+        const wf = newTickets.waterfall;
+        const newTotal = (wf.local||0) + (wf.thai||0) + (wf.foreign||0) + (wf.child||0);
+        const wfFields = { local: toValue(wf.local||0), thai: toValue(wf.thai||0), foreign: toValue(wf.foreign||0), child: toValue(wf.child||0) };
         const cvFields = { thai: toValue(newTickets.cave.thai||0), foreign: toValue(newTickets.cave.foreign||0), child: toValue(newTickets.cave.child||0) };
         const body = { fields: {
             tickets: { mapValue: { fields: {
@@ -1293,12 +1290,25 @@
                 cave: { mapValue: { fields: cvFields } }
             }}},
             wantCave: toValue(wantCave),
+            totalPeopleCount: toValue(newTotal),
         }};
-        const res = await fetch(`${FS_BASE}/registrations/${currentDocId}?updateMask.fieldPaths=tickets&updateMask.fieldPaths=wantCave`, {
+        const res = await fetch(`${FS_BASE}/registrations/${currentDocId}?updateMask.fieldPaths=tickets&updateMask.fieldPaths=wantCave&updateMask.fieldPaths=totalPeopleCount`, {
             method:'PATCH', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
             body: JSON.stringify(body)
         });
         if (!res.ok) throw new Error(await res.text());
+        // อัปเดต quota ตามจำนวนน้ำตกใหม่
+        const item = allData.find(x => x.id === currentDocId);
+        if (item) {
+            const oldTotal = item.totalPeopleCount || 0;
+            const qDate = item.visitDate || item.travelDate;
+            if (qDate && newTotal !== oldTotal) {
+                const qData = await fsGet('daily_quota', qDate);
+                const newCount = Math.max(0, (qData?.count || 0) - oldTotal + newTotal);
+                await fsPatch('daily_quota', qDate, { count: newCount });
+            }
+            item.totalPeopleCount = newTotal;
+        }
         highlightIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) { el.style.borderColor='#27ae60'; setTimeout(()=>el.style.borderColor='#bbb',1500); }
@@ -1443,10 +1453,12 @@
             const quotaMap = {};
             const excluded = ['ไม่อนุมัติ','ยกเลิกโดยผู้จอง'];
             for (const d of allRegs) {
-                if (excluded.includes(d.status)) continue;
                 const date = d.visitDate || d.travelDate;
                 if (!date) continue;
-                quotaMap[date] = (quotaMap[date]||0) + (d.totalPeopleCount||0);
+                if (!(date in quotaMap)) quotaMap[date] = 0;
+                if (!excluded.includes(d.status)) {
+                    quotaMap[date] += (d.totalPeopleCount||0);
+                }
             }
             for (const [date, count] of Object.entries(quotaMap)) {
                 await fsPatch('daily_quota', date, { count });
