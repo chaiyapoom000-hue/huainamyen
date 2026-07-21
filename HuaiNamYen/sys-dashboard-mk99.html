@@ -166,11 +166,14 @@
         /* Calendar modal */
         .cal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:300; align-items:center; justify-content:center; padding:16px; }
         .cal-overlay.open { display:flex; }
-        .cal-box { background:#f8fffe; border-radius:20px; width:100%; max-width:720px; max-height:90vh; overflow-y:auto; padding:22px; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
-        .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-        .cal-header h3 { font-family:'Kanit'; color:var(--dark-green); font-size:1.1em; font-weight:700; }
-        .cal-header-btns { display:flex; gap:8px; align-items:center; }
-        .cal-close { width:32px; height:32px; border-radius:50%; border:none; background:#f0f0f0; cursor:pointer; font-size:1em; }
+        .cal-box { background:#f8fffe; border-radius:20px; width:100%; max-width:720px; max-height:90vh; overflow-y:auto; padding:0; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+        .cal-body { padding:18px 22px 22px; }
+        .cal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 14px; background:linear-gradient(135deg,#1a4a2e 0%,#2d6a4f 40%,#40916c 70%,#52b788 100%); border-radius:20px 20px 0 0; position:relative; overflow:hidden; }
+        .cal-header::before { content:'🌿'; position:absolute; left:14px; bottom:-4px; font-size:2.8em; opacity:0.18; pointer-events:none; }
+        .cal-header::after { content:'🍃'; position:absolute; right:60px; top:-6px; font-size:2.2em; opacity:0.15; pointer-events:none; }
+        .cal-header h3 { font-family:'Kanit'; color:#d8f3dc; font-size:1.05em; font-weight:700; letter-spacing:0.02em; text-shadow:0 1px 3px rgba(0,0,0,0.3); position:relative; z-index:1; }
+        .cal-header-btns { display:flex; gap:8px; align-items:center; position:relative; z-index:1; }
+        .cal-close { width:32px; height:32px; border-radius:50%; border:none; background:rgba(255,255,255,0.2); color:white; cursor:pointer; font-size:1em; }
         .cal-month-nav { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
         .cal-month-title { font-family:'Kanit'; font-size:1.05em; color:var(--dark-green); font-weight:700; flex:1; text-align:center; }
         .cal-nav-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid #c8e6c9; background:white; cursor:pointer; font-size:1em; color:var(--dark-green); }
@@ -186,7 +189,7 @@
         .cal-day.full    { background:linear-gradient(135deg,#fdecea,#fbbcb8); color:#b71c1c; border-color:#f1948a; }
         .cal-day.today   { outline:2.5px solid #27ae60; outline-offset:1px; }
         .cal-day.past    { opacity:0.45; position:relative; }
-        .cd-stamp { position:absolute; bottom:6px; left:50%; transform:translateX(-50%) rotate(-12deg); font-family:'Kanit'; font-size:0.62em; font-weight:700; color:#c0392b; border:1.5px solid #c0392b; border-radius:4px; padding:1px 5px; white-space:nowrap; letter-spacing:0.05em; opacity:0.75; }
+        .cd-stamp { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-15deg); font-family:'Kanit'; font-size:0.68em; font-weight:800; color:#c0392b; border:2.5px solid #c0392b; border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; white-space:nowrap; letter-spacing:0.04em; opacity:0.7; box-shadow:0 0 0 1px rgba(192,57,43,0.15) inset; background:rgba(255,255,255,0.25); }
         .cal-day .cd-date { font-family:'Kanit'; font-size:1.15em; font-weight:800; }
         .cal-day .cd-count { font-size:0.8em; font-weight:600; opacity:0.85; }
         .cal-day .cd-bar { width:80%; height:5px; border-radius:99px; background:rgba(0,0,0,0.1); margin-top:3px; overflow:hidden; }
@@ -416,12 +419,13 @@
 <div class="cal-overlay" id="calOverlay" onclick="if(event.target===this)closeCalendar()">
     <div class="cal-box">
         <div class="cal-header">
-            <h3>🗓 แผนที่โควต้ารายวัน</h3>
+            <h3>🌿 แผนที่โควต้ารายวัน</h3>
             <div class="cal-header-btns">
-                <button onclick="saveCalAsImage()" style="padding:6px 14px;background:#1e8449;color:white;border:none;border-radius:8px;font-family:'Kanit';font-size:0.8em;cursor:pointer;">⬇ บันทึกรูป</button>
+                <button onclick="saveCalAsImage()" style="padding:6px 14px;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:8px;font-family:'Kanit';font-size:0.8em;cursor:pointer;backdrop-filter:blur(4px);">⬇ บันทึกรูป</button>
                 <button class="cal-close" onclick="closeCalendar()">✕</button>
             </div>
         </div>
+        <div class="cal-body">
         <div class="cal-month-nav">
             <button class="cal-nav-btn" onclick="calPrev()">‹</button>
             <div class="cal-month-title" id="calMonthTitle"></div>
@@ -434,6 +438,7 @@
             <span><div class="dot" style="background:linear-gradient(135deg,#fff3e0,#ffe0b2);border:1px solid #f5cba7;"></div> เกือบเต็ม</span>
             <span><div class="dot" style="background:linear-gradient(135deg,#fdecea,#fbbcb8);border:1px solid #f1948a;"></div> เต็มแล้ว</span>
             <span><div class="dot" style="background:#f0f0f0;border:1px solid #ddd;"></div> ปิด</span>
+        </div>
         </div>
     </div>
 </div>
@@ -870,13 +875,16 @@
     window.closeEmailPreview = function() { document.getElementById('emailPreviewOverlay').classList.remove('open'); }
     window.saveCalAsImage = async function() {
         const el = document.querySelector('.cal-box');
+        const btns = el.querySelector('.cal-header-btns');
         const prev = { maxHeight: el.style.maxHeight, overflow: el.style.overflow };
         el.style.maxHeight = 'none';
         el.style.overflow = 'visible';
+        btns.style.visibility = 'hidden';
         await new Promise(r => setTimeout(r, 50));
         const canvas = await html2canvas(el, { scale:2, backgroundColor:'#f8fffe', useCORS:true, scrollY:0 });
         el.style.maxHeight = prev.maxHeight;
         el.style.overflow = prev.overflow;
+        btns.style.visibility = '';
         const a = document.createElement('a');
         const title = document.getElementById('calMonthTitle').textContent.replace(/\s/g,'_');
         a.href = canvas.toDataURL('image/jpeg', 0.93);
@@ -1278,7 +1286,7 @@
             if (isToday) cls += ' today';
             if (isPast)  cls += ' past';
 
-            const stampHtml = isPast ? `<div class="cd-stamp">ปิดแล้ว</div>` : '';
+            const stampHtml = isPast ? `<div class="cd-stamp">สิ้นสุด</div>` : '';
             grid.innerHTML += `
                 <div class="cal-day ${cls}">
                     <div class="cd-date">${d}</div>
