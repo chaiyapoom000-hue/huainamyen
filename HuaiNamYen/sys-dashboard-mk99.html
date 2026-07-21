@@ -1204,6 +1204,7 @@
     let calQuotaCache = {};
 
     window.openCalendar = async function() {
+        calQuotaCache = {};
         document.getElementById('calOverlay').classList.add('open');
         await loadCalMonth();
     }
