@@ -518,8 +518,15 @@
     }
     async function getToken() { return await currentUser.getIdToken(); }
     async function fsList(col) {
-        const snap = await getDocs(collection(db, col));
-        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const token = await getToken();
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ structuredQuery: { from: [{ collectionId: col }] } })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rows = await res.json();
+        return rows.filter(r=>r.document).map(r=>({ id:r.document.name.split('/').pop(), ...parseFields(r.document.fields) }));
     }
     async function fsGet(col, docId) {
         const token = await getToken();
