@@ -413,7 +413,7 @@
         const modal = document.getElementById('touristReportModal');
         modal.style.display = 'flex';
         const sheets = document.getElementById('touristReportSheets');
-        sheets.innerHTML = '<div style="color:white;text-align:center;padding:40px;font-family:Kanit;">กำลังโหลด...</div>';
+        sheets.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:60px 0;"><div style="width:48px;height:48px;border:5px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:trSpin 0.8s linear infinite;"></div><div style="color:white;font-family:Kanit;font-size:0.95em;font-weight:600;">กำลังโหลด...</div></div><style>@keyframes trSpin{to{transform:rotate(360deg);}}</style>';
         if (!trLoaded) {
             trData = await loadTouristData();
             trLoaded = true;
