@@ -119,9 +119,20 @@
         .rs-footer { margin-top:18px; border-top:1px solid #ddd; padding-top:10px; display:flex; justify-content:flex-end; gap:20px; }
         .rs-footer span { font-size:0.8em; color:#666; }
         .rs-footer strong { color:#0A4B33; }
+
+        /* Loading spinner */
+        .loading-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:14px; }
+        .loading-overlay.show { display:flex; }
+        .loading-spinner { width:48px; height:48px; border:5px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.8s linear infinite; }
+        .loading-text { font-family:'Kanit'; color:white; font-size:0.95em; font-weight:600; letter-spacing:0.03em; }
+        @keyframes spin { to { transform:rotate(360deg); } }
     </style>
 </head>
 <body>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">กำลังโหลด...</div>
+</div>
 
 <div id="loginScreen" style="display:none;">
     <div class="login-box">
@@ -249,6 +260,11 @@
     }
     function parseFields(fields) { const o={}; for(const[k,v] of Object.entries(fields||{})) o[k]=parseValue(v); return o; }
     async function getToken() { return await currentUser.getIdToken(); }
+    function showLoading(text='กำลังโหลด...') {
+        document.getElementById('loadingText').textContent = text;
+        document.getElementById('loadingOverlay').classList.add('show');
+    }
+    function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
     async function fsList(col) {
         const token = await getToken();
         const res = await fetch(`${FS_BASE}:runQuery`, { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ structuredQuery: { from:[{collectionId:col}] } }) });
@@ -348,16 +364,20 @@
     }
 
     async function loadData() {
-        const all = await fsList('registrations');
-        allData = all.filter(d => d.status === 'อนุมัติแล้ว');
-        allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
-        filteredData = [...allData];
-        renderTable();
+        showLoading('กำลังโหลดข้อมูล...');
+        try {
+            const all = await fsList('registrations');
+            allData = all.filter(d => d.status === 'อนุมัติแล้ว');
+            allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
+            filteredData = [...allData];
+            renderTable();
+        } finally { hideLoading(); }
     }
 
     window.doSyncPublicReport = async function() {
         const btn = document.getElementById('btnSync');
         btn.textContent = '⏳ กำลัง Sync...'; btn.disabled = true;
+        showLoading('กำลัง Sync รายชื่อสาธารณะ...');
         try {
             const { updated, deleted } = await syncPublicReport();
             btn.textContent = `✓ อัปเดต ${updated} ลบ ${deleted} รายการ`;
@@ -365,7 +385,7 @@
         } catch(e) {
             btn.textContent = '✗ Error'; btn.disabled = false;
             alert('Sync ไม่สำเร็จ: ' + e.message);
-        }
+        } finally { hideLoading(); }
     }
 
     const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
