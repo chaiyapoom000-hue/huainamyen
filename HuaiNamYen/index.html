@@ -294,10 +294,12 @@
 
     function buildTouristSheet(monthNum) {
         const monthName = TR_MONTHS_FULL[parseInt(monthNum)-1];
+        const _cut = new Date(); _cut.setHours(0,0,0,0); _cut.setDate(_cut.getDate()-3);
+        const _cutStr = _cut.toISOString().split('T')[0];
         const items = trData.filter(d => {
             const vd = d.visitDate||d.travelDate||'';
             const ad = d.arrivalDate||'';
-            return vd.startsWith('2026-'+monthNum) && ad >= '2026-07-01';
+            return vd.startsWith('2026-'+monthNum) && ad >= '2026-07-01' && vd >= _cutStr;
         });
         const byDate = {};
         items.forEach(d => {
@@ -337,10 +339,7 @@
                         const dispPhone=phone.length>=4?phone.slice(0,-4)+'XXXX':phone;
                         const bid=x.bookingId||'-';
                         const dispBid=bid.length>=2?bid.slice(0,-2)+'XX':bid;
-                        const _cutoff = new Date(); _cutoff.setHours(0,0,0,0); _cutoff.setDate(_cutoff.getDate()-3);
-                        const _vdStr = x.visitDate||x.travelDate||'';
-                        const _showName = _vdStr >= _cutoff.toISOString().split('T')[0];
-                        const _dispName = _showName ? (x.fullName||'-') : '••••••';
+                        const _dispName = x.fullName||'-';
                         groupsHtml+=`<div style="background:${TR_VEH_BG[gi]};border-radius:5px;margin-bottom:3px;display:flex;gap:6px;padding:8px 10px;">
                             <span style="font-family:'Kanit';font-size:0.8em;color:#888;min-width:20px;">${idx++}.</span>
                             <div style="flex:1;min-width:0;">
