@@ -475,6 +475,8 @@
     const _minArrival = new Date(); _minArrival.setHours(0,0,0,0); _minArrival.setDate(_minArrival.getDate() + 3);
     flatpickr('#arrivalDate', {
         dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd/m/Y',
         minDate: _minArrival,
         locale: 'th',
     });
@@ -484,6 +486,8 @@
 
     flatpickr('#visitDate', {
         dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd/m/Y',
         minDate: _minVisit,
         maxDate: '2026-10-31',
         locale: 'th',

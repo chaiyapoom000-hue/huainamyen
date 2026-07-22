@@ -337,11 +337,15 @@
                         const dispPhone=phone.length>=4?phone.slice(0,-4)+'XXXX':phone;
                         const bid=x.bookingId||'-';
                         const dispBid=bid.length>=2?bid.slice(0,-2)+'XX':bid;
+                        const _cutoff = new Date(); _cutoff.setHours(0,0,0,0); _cutoff.setDate(_cutoff.getDate()-3);
+                        const _vdStr = x.visitDate||x.travelDate||'';
+                        const _showName = _vdStr >= _cutoff.toISOString().split('T')[0];
+                        const _dispName = _showName ? (x.fullName||'-') : '••••••';
                         groupsHtml+=`<div style="background:${TR_VEH_BG[gi]};border-radius:5px;margin-bottom:3px;display:flex;gap:6px;padding:8px 10px;">
                             <span style="font-family:'Kanit';font-size:0.8em;color:#888;min-width:20px;">${idx++}.</span>
                             <div style="flex:1;min-width:0;">
                                 <div style="font-size:0.85em;display:flex;flex-direction:column;gap:2px;">
-                                    <span style="font-weight:700;color:#222;">${x.fullName||'-'}</span>
+                                    <span style="font-weight:700;color:#222;">${_dispName}</span>
                                     <span style="font-family:'Kanit';font-size:0.78em;color:#0A4B33;">${dispBid}</span>
                                     <span style="color:#333;font-weight:600;">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveLabel}</span>
                                 </div>
