@@ -198,6 +198,13 @@
         .cal-legend span { display:flex; align-items:center; gap:5px; font-family:'Kanit'; color:#555; }
         .cal-legend .dot { width:12px; height:12px; border-radius:4px; }
 
+        /* Loading spinner */
+        .loading-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:14px; }
+        .loading-overlay.show { display:flex; }
+        .loading-spinner { width:48px; height:48px; border:5px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.8s linear infinite; }
+        .loading-text { font-family:'Kanit'; color:white; font-size:0.95em; font-weight:600; letter-spacing:0.03em; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
         /* Slip lightbox */
         .slip-lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; align-items:center; justify-content:center; cursor:zoom-out; }
         .slip-lightbox.open { display:flex; }
@@ -443,6 +450,12 @@
     </div>
 </div>
 
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">กำลังโหลด...</div>
+</div>
+
 <!-- SLIP LIGHTBOX -->
 <div class="slip-lightbox" id="slipLightbox" onclick="document.getElementById('slipLightbox').classList.remove('open')">
     <img id="slipLightboxImg" src="" alt="สลิป">
@@ -517,6 +530,13 @@
         return {stringValue:String(val)};
     }
     async function getToken() { return await currentUser.getIdToken(); }
+    function showLoading(text='กำลังโหลด...') {
+        document.getElementById('loadingText').textContent = text;
+        document.getElementById('loadingOverlay').classList.add('show');
+    }
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('show');
+    }
     async function fsList(col) {
         const token = await getToken();
         const res = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`, {
@@ -605,6 +625,7 @@
     window.doSyncPublicReport = async function() {
         const btn = document.getElementById('btnSyncPublic');
         btn.textContent = '⏳ กำลัง Sync...'; btn.disabled = true;
+        showLoading('กำลัง Sync รายชื่อสาธารณะ...');
         try {
             const { updated, deleted } = await syncPublicReport();
             btn.textContent = `✓ อัปเดต ${updated} ลบ ${deleted} รายการ`;
@@ -612,7 +633,7 @@
         } catch(e) {
             btn.textContent = '✗ Error'; btn.disabled = false;
             alert('Sync ไม่สำเร็จ: ' + e.message);
-        }
+        } finally { hideLoading(); }
     }
 
     let allData = [], filteredData = [], currentDocId = null;
@@ -650,6 +671,7 @@
 
     async function loadData() {
         document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="table-empty">กำลังโหลดข้อมูล...</td></tr>';
+        showLoading('กำลังโหลดข้อมูล...');
         try {
             allData = (await fsList('registrations')).map(d => ({ ...d, emailResent: false }));
             allData.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
@@ -684,6 +706,7 @@
         }
         filteredData = [...allData];
         renderStats(); renderTable();
+        hideLoading();
     }
 
     function renderStats() {
@@ -1176,6 +1199,7 @@
         if (!item) return;
         const newVehicle   = document.getElementById('editVehicle').value;
         const newVisitType = document.getElementById('editVisitType').value;
+        showLoading('กำลังบันทึก...');
         try {
             await fsPatch('registrations', currentDocId, { vehicle: newVehicle, visitType: newVisitType });
             Object.assign(item, { vehicle: newVehicle, visitType: newVisitType });
@@ -1184,6 +1208,7 @@
             renderStats(); renderTable();
             alert('แก้ไขสำเร็จ ✓');
         } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+        finally { hideLoading(); }
     }
 
     window.saveDateEdit = async function() {
@@ -1197,6 +1222,7 @@
 
         if (!newVisitDate) { alert('กรุณาเลือกวันเข้าชม'); return; }
 
+        showLoading('กำลังบันทึก...');
         try {
             // คืนโควต้าวันเดิม + หักโควต้าวันใหม่ (ถ้าวันเข้าชมเปลี่ยน)
             if (newVisitDate !== oldVisitDate && item.totalPeopleCount) {
@@ -1225,6 +1251,7 @@
             renderStats(); renderTable();
             alert('แก้ไขวันที่สำเร็จ ✓');
         } catch(e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
+        finally { hideLoading(); }
     }
 
     // ── CALENDAR ──
@@ -1364,6 +1391,7 @@
         if (!currentDocId) return;
         const val = document.getElementById('phoneEditInput').value.trim();
         if (!val) return;
+        showLoading('กำลังบันทึก...');
         try {
             await fsPatch('registrations', currentDocId, { phone: val });
             const item = allData.find(x=>x.id===currentDocId);
@@ -1373,6 +1401,7 @@
             document.getElementById('phoneEditForm').style.display = 'none';
             renderTable();
         } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
+        finally { hideLoading(); }
     }
 
     window.toggleNameEditForm = function() {
@@ -1383,6 +1412,7 @@
         if (!currentDocId) return;
         const val = document.getElementById('nameEditInput').value.trim();
         if (!val) return;
+        showLoading('กำลังบันทึก...');
         try {
             await fsPatch('registrations', currentDocId, { fullName: val });
             const item = allData.find(x=>x.id===currentDocId);
@@ -1392,6 +1422,7 @@
             document.getElementById('nameEditForm').style.display = 'none';
             renderTable();
         } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
+        finally { hideLoading(); }
     }
 
     window.toggleWfEditForm = function() {
@@ -1413,6 +1444,7 @@
         const child = parseInt(document.getElementById('wfEditChild').value)||0;
         const newTickets = { waterfall: {local,thai,foreign,child}, cave: item.tickets?.cave||{thai:0,foreign:0,child:0} };
         try {
+            showLoading('กำลังบันทึก...');
             await saveTickets(newTickets, item.wantCave||false, []);
             if (!item.tickets) item.tickets = {};
             item.tickets.waterfall = {local,thai,foreign,child};
@@ -1420,6 +1452,7 @@
             if (disp) disp.textContent = `${local} / ${thai} / ${foreign} / ${child}`;
             document.getElementById('wfEditForm').style.display = 'none';
         } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
+        finally { hideLoading(); }
     }
 
     window.saveCaveCount = async function() {
@@ -1432,6 +1465,7 @@
         const newTickets = { waterfall: item.tickets?.waterfall||{local:0,thai:0,foreign:0,child:0}, cave: {thai,foreign,child} };
         const wantCave = (thai+foreign+child) > 0;
         try {
+            showLoading('กำลังบันทึก...');
             await saveTickets(newTickets, wantCave, []);
             if (!item.tickets) item.tickets = {};
             item.tickets.cave = {thai,foreign,child};
@@ -1440,12 +1474,14 @@
             if (disp) disp.textContent = wantCave ? `${thai} / ${foreign} / ${child}` : '✗';
             document.getElementById('caveEditForm').style.display = 'none';
         } catch(e) { alert('บันทึกไม่สำเร็จ: '+e.message); }
+        finally { hideLoading(); }
     }
 
     window.updateStatus = async function(newStatus, rejectReason = '') {
         if(!currentDocId) return;
         const item = allData.find(x=>x.id===currentDocId);
         if (!item) return;
+        showLoading(newStatus==='อนุมัติแล้ว' ? 'กำลังอนุมัติ...' : 'กำลังดำเนินการ...');
         try {
             const patchData = { status: newStatus };
             if (rejectReason) patchData.rejectReason = rejectReason;
@@ -1486,9 +1522,11 @@
             }
             renderStats(); renderTable(); closeModalDirect();
         } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
+        finally { hideLoading(); }
     }
     window.recalculateQuota = async function() {
         if(!confirm('คำนวณโควตาใหม่ทั้งหมด?\nจะนับจาก booking จริงในระบบ (ไม่รวมยกเลิก/ไม่อนุมัติ)')) return;
+        showLoading('กำลังคำนวณโควตา...');
         try {
             const allRegs = await fsList('registrations');
             const quotaMap = {};
@@ -1507,14 +1545,15 @@
             alert('คำนวณโควตาใหม่สำเร็จ ✓ (' + Object.keys(quotaMap).length + ' วัน)');
             loadData();
         } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
+        finally { hideLoading(); }
     }
 
     window.deleteBooking = async function() {
         if(!currentDocId) return;
         const item=allData.find(x=>x.id===currentDocId);
         if(!confirm(`ลบการจอง ${item?.bookingId||''} ออกจากระบบ?\nไม่สามารถย้อนกลับได้`)) return;
+        showLoading('กำลังลบข้อมูล...');
         try {
-            // คืนโควตาถ้ายังไม่ถูกยกเลิก/ไม่อนุมัติ
             const shouldRefund = item.status !== 'ไม่อนุมัติ' && item.status !== 'ยกเลิกโดยผู้จอง';
             if (shouldRefund) {
                 const qDate = item.visitDate || item.travelDate;
@@ -1529,6 +1568,7 @@
             filteredData=filteredData.filter(x=>x.id!==currentDocId);
             renderStats(); renderTable(); closeModalDirect();
         } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
+        finally { hideLoading(); }
     }
 </script>
 </body>
