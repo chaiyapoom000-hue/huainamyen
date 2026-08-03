@@ -73,6 +73,14 @@
         .topbar-email { font-size:0.78em; color:#888; }
         .btn-logout { padding:6px 14px; border:1.5px solid #ddd; border-radius:6px; background:white; color:#666; font-family:'Prompt'; font-size:0.8em; cursor:pointer; transition:0.2s; }
         .btn-logout:hover { border-color:#e74c3c; color:#e74c3c; }
+        .sys-toggle-wrap { display:flex; align-items:center; gap:8px; margin-right:8px; }
+        .sys-toggle-label { font-family:'Kanit'; font-size:0.78em; color:#888; white-space:nowrap; }
+        .sys-toggle { position:relative; width:44px; height:24px; cursor:pointer; }
+        .sys-toggle input { opacity:0; width:0; height:0; }
+        .sys-toggle-slider { position:absolute; inset:0; background:#ccc; border-radius:24px; transition:0.3s; }
+        .sys-toggle-slider:before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:white; border-radius:50%; transition:0.3s; }
+        .sys-toggle input:checked + .sys-toggle-slider { background:var(--dark-green); }
+        .sys-toggle input:checked + .sys-toggle-slider:before { transform:translateX(20px); }
 
         .main-content { padding:72px 20px 40px; max-width:1200px; margin:0 auto; }
 
@@ -308,6 +316,13 @@
         <div class="topbar-logo">🌿</div>
         <div class="topbar-title">HNY Admin</div>
         <span class="topbar-email" id="adminEmail"></span>
+        <div class="sys-toggle-wrap">
+            <span class="sys-toggle-label" id="sysToggleLabel">ระบบ</span>
+            <label class="sys-toggle">
+                <input type="checkbox" id="sysToggle" onchange="toggleSystem(this.checked)">
+                <span class="sys-toggle-slider"></span>
+            </label>
+        </div>
         <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
     </div>
 
@@ -644,6 +659,7 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
             document.getElementById('adminEmail').textContent = user.email;
+            loadSystemStatus();
             loadData();
             loadBankInfo();
             flatpickr('#filterVisitDate',   { dateFormat:'Y-m-d', locale:'th', allowInput:false });
@@ -668,6 +684,32 @@
         } finally { btn.disabled=false; btn.textContent='เข้าสู่ระบบ'; }
     }
     window.doLogout = async function() { await signOut(auth); }
+
+    async function loadSystemStatus() {
+        try {
+            const data = await fsGet('settings', 'system');
+            const enabled = data?.enabled !== false;
+            document.getElementById('sysToggle').checked = enabled;
+            document.getElementById('sysToggleLabel').textContent = enabled ? 'เปิด' : 'ปิด';
+            document.getElementById('sysToggleLabel').style.color = enabled ? 'var(--dark-green)' : '#e74c3c';
+        } catch(e) {
+            document.getElementById('sysToggle').checked = true;
+        }
+    }
+
+    window.toggleSystem = async function(enabled) {
+        const label = document.getElementById('sysToggleLabel');
+        label.textContent = 'กำลังบันทึก...';
+        try {
+            await fsPatch('settings', 'system', { enabled });
+            label.textContent = enabled ? 'เปิด' : 'ปิด';
+            label.style.color = enabled ? 'var(--dark-green)' : '#e74c3c';
+        } catch(e) {
+            alert('บันทึกไม่สำเร็จ: ' + e.message);
+            document.getElementById('sysToggle').checked = !enabled;
+            label.textContent = !enabled ? 'เปิด' : 'ปิด';
+        }
+    }
 
     async function loadData() {
         document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="table-empty">กำลังโหลดข้อมูล...</td></tr>';
