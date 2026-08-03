@@ -568,10 +568,9 @@
         const sortedDates = Object.keys(byDate).sort();
         const totalPeople = items.reduce((s,d)=>s+(d.totalPeopleCount||0),0);
 
+        if (!sortedDates.length) return '';
         let daysHtml = '';
-        if (!sortedDates.length) {
-            daysHtml = '<div class="rs-empty">ไม่มีรายการในเดือนนี้</div>';
-        } else {
+        {
             sortedDates.forEach(date => {
                 const [y,m,d] = date.split('-');
                 const _dow = DAYS_TH[new Date(date+'T00:00:00').getDay()];
