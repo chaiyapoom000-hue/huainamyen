@@ -265,9 +265,9 @@
         document.getElementById('loadingOverlay').classList.add('show');
     }
     function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
-    async function fsList(col) {
+    async function fsList(col, extra = {}) {
         const token = await getToken();
-        const res = await fetch(`${FS_BASE}:runQuery`, { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ structuredQuery: { from:[{collectionId:col}] } }) });
+        const res = await fetch(`${FS_BASE}:runQuery`, { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ structuredQuery: { from:[{collectionId:col}], ...extra } }) });
         const rows = await res.json();
         return rows.filter(r=>r.document).map(r=>({ id: r.document.name.split('/').pop(), ...parseFields(r.document.fields) }));
     }
@@ -366,12 +366,41 @@
     async function loadData() {
         showLoading('กำลังโหลดข้อมูล...');
         try {
-            const all = await fsList('registrations');
-            allData = all.filter(d => d.status === 'อนุมัติแล้ว');
+            // Phase 1: โหลด 10 วันล่วงหน้าก่อน
+            const _d = new Date(); _d.setHours(0,0,0,0); _d.setDate(_d.getDate()-1);
+            const _from = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+            const _to = new Date(_d); _to.setDate(_to.getDate()+10);
+            const _toStr = `${_to.getFullYear()}-${String(_to.getMonth()+1).padStart(2,'0')}-${String(_to.getDate()).padStart(2,'0')}`;
+            const first = await fsList('registrations', {
+                where: { compositeFilter: { op: 'AND', filters: [
+                    { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'GREATER_THAN_OR_EQUAL', value: { stringValue: _from } } },
+                    { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'LESS_THAN_OR_EQUAL', value: { stringValue: _toStr } } },
+                    { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'อนุมัติแล้ว' } } }
+                ]}}
+            });
+            allData = first;
             allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
             filteredData = [...allData];
             renderTable();
-        } finally { hideLoading(); }
+            hideLoading();
+
+            // Phase 2: โหลดทั้งหมดใน background
+            fsList('registrations').then(all => {
+                const fullData = all.filter(d => d.status === 'อนุมัติแล้ว');
+                const existingIds = new Set(allData.map(d => d.id));
+                const newRecords = fullData.filter(d => !existingIds.has(d.id));
+                if (newRecords.length > 0) {
+                    allData = [...allData, ...newRecords];
+                    allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
+                    filteredData = [...allData];
+                    renderTable();
+                }
+            }).catch(e => console.warn('background load error:', e));
+
+        } catch(e) {
+            hideLoading();
+            console.error(e);
+        }
     }
 
     window.doSyncPublicReport = async function() {

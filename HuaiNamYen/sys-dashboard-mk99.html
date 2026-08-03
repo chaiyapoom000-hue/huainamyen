@@ -552,12 +552,12 @@
     function hideLoading() {
         document.getElementById('loadingOverlay').classList.remove('show');
     }
-    async function fsList(col) {
+    async function fsList(col, extra = {}) {
         const token = await getToken();
         const res = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ structuredQuery: { from: [{ collectionId: col }] } })
+            body: JSON.stringify({ structuredQuery: { from: [{ collectionId: col }], ...extra } })
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const rows = await res.json();
@@ -659,8 +659,7 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
             document.getElementById('adminEmail').textContent = user.email;
-            loadSystemStatus();
-            loadData();
+            Promise.all([loadSystemStatus(), loadData()]);
             loadBankInfo();
             flatpickr('#filterVisitDate',   { dateFormat:'Y-m-d', locale:'th', allowInput:false });
             flatpickr('#filterArrivalDate', { dateFormat:'Y-m-d', locale:'th', allowInput:false });
@@ -688,12 +687,14 @@
     async function loadSystemStatus() {
         try {
             const data = await fsGet('settings', 'system');
-            const enabled = data?.enabled !== false;
+            const enabled = !data || data.enabled !== false;
             document.getElementById('sysToggle').checked = enabled;
             document.getElementById('sysToggleLabel').textContent = enabled ? 'เปิด' : 'ปิด';
             document.getElementById('sysToggleLabel').style.color = enabled ? 'var(--dark-green)' : '#e74c3c';
         } catch(e) {
             document.getElementById('sysToggle').checked = true;
+            document.getElementById('sysToggleLabel').textContent = 'เปิด';
+            document.getElementById('sysToggleLabel').style.color = 'var(--dark-green)';
         }
     }
 
@@ -711,44 +712,67 @@
         }
     }
 
+    async function runAutoCancels(data) {
+        const now = Date.now();
+        const limit24h = 24 * 60 * 60 * 1000;
+        const toCancel = data.filter(d => {
+            if (d.status !== 'รอชำระเงิน') return false;
+            const ts = d.timestamp?.seconds ? d.timestamp.seconds * 1000 : null;
+            return ts && (now - ts) > limit24h;
+        });
+        if (toCancel.length > 0) {
+            await Promise.all(toCancel.map(async d => {
+                await fsPatch('registrations', d.id, { status: 'ยกเลิกโดยผู้จอง' });
+                const qDate = d.visitDate || d.travelDate;
+                const qPeople = d.totalPeopleCount;
+                if (qDate && qPeople) {
+                    const qData = await fsGet('daily_quota', qDate);
+                    await fsPatch('daily_quota', qDate, { count: Math.max(0, (qData?.count||0) - qPeople) });
+                }
+                d.status = 'ยกเลิกโดยผู้จอง';
+            }));
+        }
+    }
+
     async function loadData() {
         document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="table-empty">กำลังโหลดข้อมูล...</td></tr>';
         showLoading('กำลังโหลดข้อมูล...');
         try {
-            allData = (await fsList('registrations')).map(d => ({ ...d, emailResent: false }));
+            // Phase 1: โหลด 50 รายการล่าสุดก่อน
+            allData = (await fsList('registrations', {
+                orderBy: [{ field: { fieldPath: 'timestamp' }, direction: 'DESCENDING' }],
+                limit: 50
+            })).map(d => ({ ...d, emailResent: false }));
             allData.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
-
-            // Auto-cancel รอชำระเงิน เกิน 24 ชั่วโมง
-            const now = Date.now();
-            const limit24h = 24 * 60 * 60 * 1000;
-            const toCancel = allData.filter(d => {
-                if (d.status !== 'รอชำระเงิน') return false;
-                const ts = d.timestamp?.seconds ? d.timestamp.seconds * 1000 : null;
-                return ts && (now - ts) > limit24h;
-            });
-            if (toCancel.length > 0) {
-                await Promise.all(toCancel.map(async d => {
-                    await fsPatch('registrations', d.id, { status: 'ยกเลิกโดยผู้จอง' });
-                    const qDate = d.visitDate || d.travelDate;
-                    const qPeople = d.totalPeopleCount;
-                    if (qDate && qPeople) {
-                        const qData = await fsGet('daily_quota', qDate);
-                        await fsPatch('daily_quota', qDate, { count: Math.max(0, (qData?.count||0) - qPeople) });
-                    }
-                    d.status = 'ยกเลิกโดยผู้จอง';
-                }));
-            }
-
+            await runAutoCancels(allData);
             document.getElementById('loadError').style.display = 'none';
+            filteredData = [...allData];
+            renderStats(); renderTable();
+            hideLoading();
+
+            // Phase 2: โหลดทั้งหมดใน background
+            fsList('registrations').then(async all => {
+                const allMapped = all.map(d => ({ ...d, emailResent: false }));
+                const existingIds = new Set(allData.map(d => d.id));
+                const newRecords = allMapped.filter(d => !existingIds.has(d.id));
+                if (newRecords.length > 0) {
+                    await runAutoCancels(newRecords);
+                    allData = [...allData, ...newRecords];
+                    allData.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+                    filteredData = [...allData];
+                    renderStats(); renderTable();
+                }
+            }).catch(e => console.warn('background load error:', e));
+
         } catch(e) {
             console.error('loadData error:', e);
             document.getElementById('loadError').textContent = '❌ โหลดข้อมูลไม่ได้: ' + e.message;
             document.getElementById('loadError').style.display = 'block';
             allData = [];
+            filteredData = [];
+            renderStats(); renderTable();
+            hideLoading();
         }
-        filteredData = [...allData];
-        renderStats(); renderTable();
-        hideLoading();
     }
 
     function renderStats() {
