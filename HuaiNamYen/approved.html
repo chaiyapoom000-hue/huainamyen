@@ -384,6 +384,8 @@
             hideLoading();
 
             // Phase 2: โหลดทั้งหมดใน background
+            const _tb = document.getElementById('tableBody');
+            _tb.insertAdjacentHTML('beforeend', '<tr id="bgLoadRow"><td colspan="8" style="text-align:center;padding:16px;"><span style="display:inline-flex;align-items:center;gap:8px;color:#aaa;font-size:0.85em;"><span style="width:18px;height:18px;border:2.5px solid #ddd;border-top-color:#67A792;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite;"></span>กำลังโหลดข้อมูลทั้งหมด...</span></td></tr>');
             fsList('registrations').then(all => {
                 const fullData = all.filter(d => d.status === 'อนุมัติแล้ว');
                 const existingIds = new Set(allData.map(d => d.id));
@@ -393,8 +395,10 @@
                     allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
                     filteredData = [...allData];
                     renderTable();
+                } else {
+                    document.getElementById('bgLoadRow')?.remove();
                 }
-            }).catch(e => console.warn('background load error:', e));
+            }).catch(e => { console.warn('background load error:', e); document.getElementById('bgLoadRow')?.remove(); });
 
         } catch(e) {
             hideLoading();
