@@ -372,12 +372,9 @@
             const _to = new Date(_d); _to.setDate(_to.getDate()+11);
             const _toStr = `${_to.getFullYear()}-${String(_to.getMonth()+1).padStart(2,'0')}-${String(_to.getDate()).padStart(2,'0')}`;
             const first = await fsList('registrations', {
-                where: { compositeFilter: { op: 'AND', filters: [
-                    { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'GREATER_THAN_OR_EQUAL', value: { stringValue: _from } } },
-                    { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'LESS_THAN_OR_EQUAL', value: { stringValue: _toStr } } }
-                ]}}
+                where: { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'GREATER_THAN_OR_EQUAL', value: { stringValue: _from } } }
             });
-            allData = first.filter(d => d.status === 'อนุมัติแล้ว');
+            allData = first.filter(d => d.status === 'อนุมัติแล้ว' && (d.visitDate||d.travelDate||'') <= _toStr);
             allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
             filteredData = [...allData];
             renderTable();
