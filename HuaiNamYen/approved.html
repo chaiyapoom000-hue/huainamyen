@@ -366,19 +366,18 @@
     async function loadData() {
         showLoading('กำลังโหลดข้อมูล...');
         try {
-            // Phase 1: โหลด 10 วันล่วงหน้าก่อน
+            // Phase 1: โหลด visitDate 10 วันข้างหน้าก่อน
             const _d = new Date(); _d.setHours(0,0,0,0); _d.setDate(_d.getDate()-1);
             const _from = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
-            const _to = new Date(_d); _to.setDate(_to.getDate()+10);
+            const _to = new Date(_d); _to.setDate(_to.getDate()+11);
             const _toStr = `${_to.getFullYear()}-${String(_to.getMonth()+1).padStart(2,'0')}-${String(_to.getDate()).padStart(2,'0')}`;
             const first = await fsList('registrations', {
                 where: { compositeFilter: { op: 'AND', filters: [
                     { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'GREATER_THAN_OR_EQUAL', value: { stringValue: _from } } },
-                    { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'LESS_THAN_OR_EQUAL', value: { stringValue: _toStr } } },
-                    { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'อนุมัติแล้ว' } } }
+                    { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'LESS_THAN_OR_EQUAL', value: { stringValue: _toStr } } }
                 ]}}
             });
-            allData = first;
+            allData = first.filter(d => d.status === 'อนุมัติแล้ว');
             allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
             filteredData = [...allData];
             renderTable();
