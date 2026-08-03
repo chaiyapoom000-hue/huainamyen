@@ -170,7 +170,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { initializeFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { initializeFirestore, doc, getDoc, collection, getDocs, query, where, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
     const firebaseConfig = { apiKey:"AIzaSyAy29KDpLxcXn_fIaATkVE-K_4cDtMx9O4", authDomain:"maekhong-waterfall-51445.firebaseapp.com", projectId:"maekhong-waterfall-51445", storageBucket:"maekhong-waterfall-51445.firebasestorage.app", messagingSenderId:"40565650481", appId:"1:40565650481:web:9cf6a76cb388c61ea05110" };
     const app = initializeApp(firebaseConfig);
@@ -290,7 +290,7 @@
     const TR_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
     const TR_DAYS_TH = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'];
     const TR_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    let trData = [], trLoaded = false, _trScrollTimer = null;
+    let trData = [], _trLastDoc = null, _trAllLoaded = false, _trLoading = false, _trScrollTimer = null;
 
     function trFmtDate(str) {
         if (!str) return '-';
@@ -309,12 +309,10 @@
 
     function buildTouristSheet(monthNum) {
         const monthName = TR_MONTHS_FULL[parseInt(monthNum)-1];
-        const _cut = new Date(); _cut.setHours(0,0,0,0); _cut.setDate(_cut.getDate()-2);
-        const _cutStr = `${_cut.getFullYear()}-${String(_cut.getMonth()+1).padStart(2,'0')}-${String(_cut.getDate()).padStart(2,'0')}`;
         const items = trData.filter(d => {
             const vd = d.visitDate||d.travelDate||'';
             const ad = d.arrivalDate||'';
-            return vd.startsWith('2026-'+monthNum) && ad >= '2026-07-01' && vd >= _cutStr;
+            return vd.startsWith('2026-'+monthNum) && ad >= '2026-07-01';
         });
         const byDate = {};
         items.forEach(d => {
@@ -388,37 +386,61 @@
         </div>`;
     }
 
-    async function loadTouristData() {
-        const snap = await getDocs(collection(db, 'public_report'));
-        return snap.docs.map(d => {
-            const x = d.data();
-            const tickets = x.tickets||{};
-            const totalPeopleCount = Object.values(tickets.waterfall||{}).reduce((s,v)=>s+v,0);
-            return { id: d.id, bookingId: x.bookingId, fullName: x.fullName, phone: x.phone,
-                visitDate: x.visitDate, travelDate: x.travelDate, arrivalDate: x.arrivalDate,
-                vehicle: x.vehicle, wantCave: x.wantCave||false, tickets, totalPeopleCount };
-        });
+    function _trCutStr() {
+        const c = new Date(); c.setHours(0,0,0,0); c.setDate(c.getDate()-2);
+        return `${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}-${String(c.getDate()).padStart(2,'0')}`;
+    }
+    function _trParseDoc(d) {
+        const x = d.data();
+        const tickets = x.tickets||{};
+        const totalPeopleCount = Object.values(tickets.waterfall||{}).reduce((s,v)=>s+v,0);
+        return { id: d.id, bookingId: x.bookingId, fullName: x.fullName, phone: x.phone,
+            visitDate: x.visitDate, travelDate: x.travelDate, arrivalDate: x.arrivalDate,
+            vehicle: x.vehicle, wantCave: x.wantCave||false, tickets, totalPeopleCount };
+    }
+    async function loadTouristData(afterDoc = null) {
+        const cutStr = _trCutStr();
+        let q = query(collection(db, 'public_report'), where('visitDate','>=',cutStr), orderBy('visitDate','asc'), limit(50));
+        if (afterDoc) q = query(collection(db, 'public_report'), where('visitDate','>=',cutStr), orderBy('visitDate','asc'), startAfter(afterDoc), limit(50));
+        const snap = await getDocs(q);
+        _trLastDoc = snap.docs[snap.docs.length-1] || null;
+        if (snap.docs.length < 50) _trAllLoaded = true;
+        return snap.docs.map(_trParseDoc);
     }
 
-    function initTouristScrollIndicator() {
+    const TR_SPINNER = '<div id="trInfiniteSpinner" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 0;"><div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:white;border-radius:50%;animation:trSpin 0.8s linear infinite;"></div><div style="color:rgba(255,255,255,0.7);font-family:Kanit;font-size:0.82em;">กำลังโหลดเพิ่ม...</div></div><style>@keyframes trSpin{to{transform:rotate(360deg);}}</style>';
+
+    function initTouristScroll() {
         const scroll = document.getElementById('touristReportScroll');
         const indicator = document.getElementById('touristScrollIndicator');
         if (!scroll||!indicator) return;
-        scroll.onscroll = function() {
+        scroll.onscroll = async function() {
+            // scroll indicator
             const days = document.querySelectorAll('.tr-day');
             const scrollTop = scroll.scrollTop + scroll.clientHeight/2;
             let current = null;
             days.forEach(day => { if (day.offsetTop <= scrollTop) current = day; });
             if (current) {
-                const dateStr = current.id.replace('trday-','');
-                const parts = dateStr.split('-');
-                if (parts.length===3) {
-                    indicator.textContent = `${parseInt(parts[2])} ${TR_MONTHS_SHORT[parseInt(parts[1])-1]}`;
-                    indicator.style.opacity = '1';
-                }
+                const parts = current.id.replace('trday-','').split('-');
+                if (parts.length===3) { indicator.textContent = `${parseInt(parts[2])} ${TR_MONTHS_SHORT[parseInt(parts[1])-1]}`; indicator.style.opacity='1'; }
             }
             clearTimeout(_trScrollTimer);
             _trScrollTimer = setTimeout(()=>{ indicator.style.opacity='0'; }, 1200);
+            // infinite load
+            if (!_trAllLoaded && !_trLoading && scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 200) {
+                _trLoading = true;
+                const sheets = document.getElementById('touristReportSheets');
+                sheets.insertAdjacentHTML('beforeend', TR_SPINNER);
+                try {
+                    const more = await loadTouristData(_trLastDoc);
+                    trData = [...trData, ...more];
+                } catch(e) {}
+                document.getElementById('trInfiniteSpinner')?.remove();
+                const rebuilt = TR_MONTHS.map(m => buildTouristSheet(m)).join('');
+                sheets.innerHTML = rebuilt || '<div style="color:rgba(255,255,255,0.6);text-align:center;padding:40px;">ไม่มีรายการ</div>';
+                _trLoading = false;
+                setTimeout(()=>{ scroll.onscroll && scroll.onscroll({target:scroll}); }, 100);
+            }
         };
     }
 
@@ -426,13 +448,13 @@
         const modal = document.getElementById('touristReportModal');
         modal.style.display = 'flex';
         const sheets = document.getElementById('touristReportSheets');
+        // reset ทุกครั้งที่เปิด
+        trData = []; _trLastDoc = null; _trAllLoaded = false; _trLoading = false;
         sheets.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:60px 0;"><div style="width:48px;height:48px;border:5px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:trSpin 0.8s linear infinite;"></div><div style="color:white;font-family:Kanit;font-size:0.95em;font-weight:600;">กำลังโหลด...</div></div><style>@keyframes trSpin{to{transform:rotate(360deg);}}</style>';
-        if (!trLoaded) {
-            trData = await loadTouristData();
-            trLoaded = true;
-        }
-        sheets.innerHTML = TR_MONTHS.map(m => buildTouristSheet(m)).join('');
-        setTimeout(initTouristScrollIndicator, 100);
+        trData = await loadTouristData();
+        sheets.innerHTML = TR_MONTHS.map(m => buildTouristSheet(m)).join('') || '<div style="color:rgba(255,255,255,0.6);text-align:center;padding:40px;">ไม่มีรายการ</div>';
+        if (!_trAllLoaded) sheets.insertAdjacentHTML('beforeend', TR_SPINNER);
+        setTimeout(initTouristScroll, 100);
     };
 
     window.closeTouristReport = function() {
