@@ -267,7 +267,22 @@
         }
     }
 
+    async function loadSystemStatus() {
+        try {
+            const snap = await getDoc(doc(db, 'settings', 'system'));
+            if (snap.exists() && snap.data().enabled === false) {
+                const btn = document.getElementById('bookBtn');
+                btn.className = 'btn-book disabled';
+                btn.textContent = '🔧 อยู่ระหว่างปรับปรุงชั่วคราว';
+                btn.href = '#';
+                btn.style.background = 'rgba(255,255,255,0.25)';
+                btn.style.color = 'rgba(255,255,255,0.7)';
+            }
+        } catch(e) {}
+    }
+
     loadTodayStats();
+    loadSystemStatus();
 
     // Tourist Report
     const TR_MONTHS = ['07','08','09','10'];
