@@ -295,7 +295,7 @@
     function buildTouristSheet(monthNum) {
         const monthName = TR_MONTHS_FULL[parseInt(monthNum)-1];
         const _cut = new Date(); _cut.setHours(0,0,0,0); _cut.setDate(_cut.getDate()-3);
-        const _cutStr = _cut.toISOString().split('T')[0];
+        const _cutStr = `${_cut.getFullYear()}-${String(_cut.getMonth()+1).padStart(2,'0')}-${String(_cut.getDate()).padStart(2,'0')}`;
         const items = trData.filter(d => {
             const vd = d.visitDate||d.travelDate||'';
             const ad = d.arrivalDate||'';
