@@ -375,7 +375,11 @@
                 where: { fieldFilter: { field: { fieldPath: 'visitDate' }, op: 'GREATER_THAN_OR_EQUAL', value: { stringValue: _from } } }
             });
             allData = first.filter(d => d.status === 'อนุมัติแล้ว' && (d.visitDate||d.travelDate||'') <= _toStr);
-            allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
+            allData.sort((a,b) => {
+                    const vd = (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||'');
+                    if (vd !== 0) return vd;
+                    return (a.wantCave?1:0) - (b.wantCave?1:0);
+                });
             filteredData = [...allData];
             renderTable();
             hideLoading();
@@ -389,7 +393,11 @@
                 const newRecords = fullData.filter(d => !existingIds.has(d.id));
                 if (newRecords.length > 0) {
                     allData = [...allData, ...newRecords];
-                    allData.sort((a,b) => (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||''));
+                    allData.sort((a,b) => {
+                    const vd = (a.visitDate||a.travelDate||'').localeCompare(b.visitDate||b.travelDate||'');
+                    if (vd !== 0) return vd;
+                    return (a.wantCave?1:0) - (b.wantCave?1:0);
+                });
                     filteredData = [...allData];
                     renderTable();
                 } else {
