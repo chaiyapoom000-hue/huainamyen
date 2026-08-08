@@ -73,14 +73,50 @@
         .topbar-email { font-size:0.78em; color:#888; }
         .btn-logout { padding:6px 14px; border:1.5px solid #ddd; border-radius:6px; background:white; color:#666; font-family:'Prompt'; font-size:0.8em; cursor:pointer; transition:0.2s; }
         .btn-logout:hover { border-color:#e74c3c; color:#e74c3c; }
-        .sys-toggle-wrap { display:flex; align-items:center; gap:8px; margin-right:8px; }
-        .sys-toggle-label { font-family:'Kanit'; font-size:0.78em; color:#888; white-space:nowrap; }
-        .sys-toggle { position:relative; width:44px; height:24px; cursor:pointer; }
-        .sys-toggle input { opacity:0; width:0; height:0; }
-        .sys-toggle-slider { position:absolute; inset:0; background:#ccc; border-radius:24px; transition:0.3s; }
-        .sys-toggle-slider:before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:white; border-radius:50%; transition:0.3s; }
-        .sys-toggle input:checked + .sys-toggle-slider { background:var(--dark-green); }
-        .sys-toggle input:checked + .sys-toggle-slider:before { transform:translateX(20px); }
+
+        /* Settings dropdown */
+        .settings-wrap { position:relative; }
+        .btn-settings { width:36px; height:36px; border-radius:8px; border:1.5px solid #ddd; background:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1em; transition:0.2s; }
+        .btn-settings:hover { background:#f5f5f5; border-color:#bbb; }
+        .settings-dropdown { position:absolute; top:44px; right:0; background:white; border:1px solid #e0e0e0; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); width:240px; padding:8px 0; z-index:999; display:none; }
+        .settings-dropdown.open { display:block; }
+        .sd-section { padding:10px 16px 6px; font-family:'Kanit'; font-size:0.72em; color:#aaa; letter-spacing:1px; text-transform:uppercase; }
+        .sd-row { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; gap:10px; }
+        .sd-label { font-size:0.85em; color:#333; font-family:'Prompt'; }
+        .sd-divider { height:1px; background:#f0f0f0; margin:4px 0; }
+        /* mini toggle */
+        .mini-toggle { position:relative; width:40px; height:22px; flex-shrink:0; cursor:pointer; }
+        .mini-toggle input { opacity:0; width:0; height:0; }
+        .mini-slider { position:absolute; inset:0; background:#ccc; border-radius:22px; transition:0.3s; }
+        .mini-slider:before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:white; border-radius:50%; transition:0.3s; }
+        .mini-toggle input:checked + .mini-slider { background:var(--dark-green); }
+        .mini-toggle input:checked + .mini-slider.red { background:#e74c3c; }
+        .mini-toggle input:checked + .mini-slider:before { transform:translateX(18px); }
+        /* eye comfort slider */
+        .eye-slider { -webkit-appearance:none; width:100%; height:4px; border-radius:4px; background:linear-gradient(to right,#fff5e0,#ffaa44); outline:none; cursor:pointer; }
+        .eye-slider::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#cc8e35; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+        /* system off banner */
+        .sys-off-banner { display:none; position:fixed; top:56px; left:0; right:0; background:#e74c3c; color:white; text-align:center; font-family:'Kanit'; font-size:0.88em; font-weight:600; padding:7px; z-index:199; letter-spacing:0.5px; }
+        /* dark mode overlay for eye comfort */
+        #eyeOverlay { position:fixed; inset:0; pointer-events:none; z-index:9999; background:rgba(255,160,50,0); transition:background 0.3s; }
+        /* dark mode */
+        body.dark-mode { background:#1a1a2e !important; color:#ddd; }
+        body.dark-mode .topbar { background:#12122a; border-color:#333; }
+        body.dark-mode .topbar-title { color:#67A792; }
+        body.dark-mode .topbar-email { color:#888; }
+        body.dark-mode .btn-logout { background:#12122a; border-color:#333; color:#aaa; }
+        body.dark-mode .btn-settings { background:#12122a; border-color:#333; }
+        body.dark-mode .settings-dropdown { background:#1e1e3a; border-color:#333; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+        body.dark-mode .sd-label { color:#ccc; }
+        body.dark-mode .sd-section { color:#666; }
+        body.dark-mode .sd-divider { background:#2a2a4a; }
+        body.dark-mode .stat-card { background:#1e1e3a; border-color:#2a2a4a; }
+        body.dark-mode .stat-value { color:#67A792; }
+        body.dark-mode .data-table th { background:#12122a; color:#aaa; }
+        body.dark-mode .data-table td { border-color:#2a2a4a; color:#ccc; }
+        body.dark-mode .data-table tr:hover td { background:#1e1e3a; }
+        body.dark-mode .filter-bar { background:#1e1e3a; border-color:#2a2a4a; }
+        body.dark-mode input, body.dark-mode select { background:#12122a; color:#ccc; border-color:#333; }
 
         .main-content { padding:72px 20px 40px; max-width:1200px; margin:0 auto; }
 
@@ -310,18 +346,42 @@
     </div>
 </div>
 
+<div id="eyeOverlay"></div>
+<div id="sysOffBanner" class="sys-off-banner">⚠️ ขณะนี้ระบบปิดอยู่ — นักท่องเที่ยวไม่สามารถจองได้</div>
+
 <!-- ADMIN PANEL -->
 <div id="adminPanel">
     <div class="topbar">
         <div class="topbar-logo">🌿</div>
         <div class="topbar-title">HNY Admin</div>
         <span class="topbar-email" id="adminEmail"></span>
-        <div class="sys-toggle-wrap">
-            <span class="sys-toggle-label" id="sysToggleLabel">ระบบ</span>
-            <label class="sys-toggle">
-                <input type="checkbox" id="sysToggle" onchange="toggleSystem(this.checked)">
-                <span class="sys-toggle-slider"></span>
-            </label>
+        <div class="settings-wrap">
+            <button class="btn-settings" onclick="toggleSettingsMenu()" title="ตั้งค่า">⚙️</button>
+            <div class="settings-dropdown" id="settingsDropdown">
+                <div class="sd-section">ระบบ</div>
+                <div class="sd-row">
+                    <span class="sd-label" id="sysToggleLabel">เปิดระบบจอง</span>
+                    <label class="mini-toggle">
+                        <input type="checkbox" id="sysToggle" onchange="toggleSystem(this.checked)">
+                        <span class="mini-slider"></span>
+                    </label>
+                </div>
+                <div class="sd-divider"></div>
+                <div class="sd-section">จอภาพ</div>
+                <div class="sd-row">
+                    <span class="sd-label">☀️ ถนอมสายตา</span>
+                </div>
+                <div style="padding:0 16px 10px;">
+                    <input type="range" class="eye-slider" id="eyeSlider" min="0" max="60" value="0" oninput="updateEyeComfort(this.value)">
+                </div>
+                <div class="sd-row">
+                    <span class="sd-label">🌙 โหมดมืด</span>
+                    <label class="mini-toggle">
+                        <input type="checkbox" id="darkToggle" onchange="toggleDarkMode(this.checked)">
+                        <span class="mini-slider"></span>
+                    </label>
+                </div>
+            </div>
         </div>
         <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
     </div>
@@ -684,17 +744,51 @@
     }
     window.doLogout = async function() { await signOut(auth); }
 
+    // Settings dropdown
+    window.toggleSettingsMenu = function() {
+        document.getElementById('settingsDropdown').classList.toggle('open');
+    };
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.settings-wrap')) {
+            document.getElementById('settingsDropdown')?.classList.remove('open');
+        }
+    });
+
+    // Eye comfort
+    window.updateEyeComfort = function(val) {
+        document.getElementById('eyeOverlay').style.background = `rgba(255,160,50,${val/100})`;
+        localStorage.setItem('hny_eye', val);
+    };
+
+    // Dark mode
+    window.toggleDarkMode = function(on) {
+        document.body.classList.toggle('dark-mode', on);
+        localStorage.setItem('hny_dark', on ? '1' : '0');
+    };
+
+    // Restore saved preferences
+    (function() {
+        const eye = localStorage.getItem('hny_eye');
+        if (eye) { document.getElementById('eyeSlider').value = eye; updateEyeComfort(eye); }
+        const dark = localStorage.getItem('hny_dark');
+        if (dark === '1') { document.getElementById('darkToggle').checked = true; document.body.classList.add('dark-mode'); }
+    })();
+
+    function updateSysBanner(enabled) {
+        document.getElementById('sysOffBanner').style.display = enabled ? 'none' : 'block';
+        document.querySelector('.main-content').style.paddingTop = enabled ? '72px' : '107px';
+    }
+
     async function loadSystemStatus() {
         try {
             const data = await fsGet('settings', 'system');
             const enabled = !data || data.enabled !== false;
             document.getElementById('sysToggle').checked = enabled;
-            document.getElementById('sysToggleLabel').textContent = enabled ? 'เปิด' : 'ปิด';
-            document.getElementById('sysToggleLabel').style.color = enabled ? 'var(--dark-green)' : '#e74c3c';
+            document.getElementById('sysToggleLabel').textContent = enabled ? 'เปิดระบบจอง' : 'ปิดระบบจองอยู่';
+            updateSysBanner(enabled);
         } catch(e) {
             document.getElementById('sysToggle').checked = true;
-            document.getElementById('sysToggleLabel').textContent = 'เปิด';
-            document.getElementById('sysToggleLabel').style.color = 'var(--dark-green)';
+            updateSysBanner(true);
         }
     }
 
@@ -703,12 +797,12 @@
         label.textContent = 'กำลังบันทึก...';
         try {
             await fsPatch('settings', 'system', { enabled });
-            label.textContent = enabled ? 'เปิด' : 'ปิด';
-            label.style.color = enabled ? 'var(--dark-green)' : '#e74c3c';
+            label.textContent = enabled ? 'เปิดระบบจอง' : 'ปิดระบบจองอยู่';
+            updateSysBanner(enabled);
         } catch(e) {
             alert('บันทึกไม่สำเร็จ: ' + e.message);
             document.getElementById('sysToggle').checked = !enabled;
-            label.textContent = !enabled ? 'เปิด' : 'ปิด';
+            label.textContent = !enabled ? 'เปิดระบบจอง' : 'ปิดระบบจองอยู่';
         }
     }
 
