@@ -167,7 +167,7 @@ async function loadData() {
     // กรองเฉพาะตั้งแต่ 2 วันก่อนวันนี้เป็นต้นไป
     const cutoff = new Date(); cutoff.setHours(0,0,0,0); cutoff.setDate(cutoff.getDate()-2);
     const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
-    const filtered = docs.filter(d => (d.visitDate || d.arrivalDate || '') >= cutoffStr);
+    const filtered = docs.filter(d => (d.arrivalDate || d.visitDate || '') >= cutoffStr);
 
     filtered.sort((a,b) => {
       const ad = (a.arrivalDate||a.visitDate||'').localeCompare(b.arrivalDate||b.visitDate||'');
