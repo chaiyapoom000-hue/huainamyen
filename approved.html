@@ -642,12 +642,12 @@
         const _cutoffStr = `${_cutoff.getFullYear()}-${String(_cutoff.getMonth()+1).padStart(2,'0')}-${String(_cutoff.getDate()).padStart(2,'0')}`;
         const items = allData.filter(d => {
             const vd = d.visitDate||d.travelDate||'';
-            const ad = d.arrivalDate||'';
+            const ad = d.arrivalDate||vd;
             return vd.startsWith('2026-'+monthNum) && ad >= '2026-07-01' && vd >= _cutoffStr;
         });
         const byDate = {};
         items.forEach(d => {
-            const date = d.arrivalDate||'';
+            const date = d.arrivalDate||d.visitDate||d.travelDate||'';
             if (!byDate[date]) byDate[date] = [];
             byDate[date].push(d);
         });
