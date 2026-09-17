@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รายชื่อนักท่องเที่ยว - น้ำตกห้วยน้ำเย็น</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --green:#0A4B33; --mint:#67A792; --bg:#F0EBE0; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Prompt',sans-serif;background:var(--bg);min-height:100vh;padding-top:56px;}
+
+  #topBar{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    background:var(--green);color:white;
+    height:56px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 16px;
+  }
+  #topBar .title{display:flex;align-items:center;gap:8px;font-family:'Kanit';font-size:1.1rem;font-weight:700;}
+  #topBar .title .leaf{font-size:1.2em;}
+  #topBar .btn-close{
+    color:white;text-decoration:none;font-size:0.9em;
+    display:flex;align-items:center;gap:5px;
+    background:rgba(255,255,255,0.18);border-radius:20px;padding:5px 14px;
+    transition:background 0.2s;
+  }
+  #topBar .btn-close:hover{background:rgba(255,255,255,0.3);}
+
+  .content{max-width:700px;margin:0 auto;padding:20px 16px 40px;}
+
+  .report-header{text-align:center;padding:16px 0 12px;}
+  .report-header h2{font-family:'Kanit';color:var(--green);font-size:1.2rem;font-weight:700;margin-bottom:4px;}
+  .report-header .sub{color:#888;font-size:0.88em;}
+  .divider{height:3px;background:var(--mint);border-radius:2px;margin:12px 0 20px;}
+
+  .day-section{margin-bottom:20px;}
+  .day-title{
+    background:#e8f4ef;color:var(--green);font-family:'Kanit';font-weight:700;
+    padding:7px 14px;border-radius:8px;margin-bottom:8px;font-size:0.95rem;
+  }
+
+  .entry{
+    border-radius:8px;padding:10px 14px;margin-bottom:6px;
+    background:#f5f5f5;
+  }
+  .entry.veh-0{background:#ede7f6;}
+  .entry.veh-1{background:#fef9e7;}
+  .entry.veh-2{background:#e8f4fd;}
+  .entry-top{display:flex;align-items:flex-start;gap:8px;}
+  .entry-num{color:#888;font-size:0.85em;font-weight:600;min-width:22px;padding-top:2px;}
+  .entry-body{flex:1;}
+  .entry-name{font-weight:700;color:#111;font-size:0.92em;}
+  .entry-bid{font-family:'Kanit';font-size:0.78em;color:var(--green);margin:1px 0;}
+  .entry-tickets{font-weight:600;color:#222;font-size:0.87em;margin:2px 0;}
+  .entry-meta{font-size:0.81em;color:#555;display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;}
+
+  #loading{text-align:center;padding:60px 20px;color:#888;font-size:0.95em;}
+  #error{display:none;text-align:center;padding:40px 20px;color:#c0392b;font-size:0.9em;}
+
+  .scroll-date{
+    position:fixed;right:10px;bottom:60px;
+    background:rgba(10,75,51,0.85);color:white;
+    border-radius:20px;padding:5px 12px;font-family:'Kanit';font-size:0.8em;
+    pointer-events:none;opacity:0;transition:opacity 0.3s;
+  }
+  .scroll-date.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div id="topBar">
+  <div class="title"><span class="leaf">🌿</span>รายชื่อนักท่องเที่ยว</div>
+  <a href="index.html" class="btn-close">✕ ปิด</a>
+</div>
+
+<div class="content">
+  <div class="report-header">
+    <h2 id="reportTitle">รายชื่อผู้เข้าชมน้ำตกห้วยน้ำเย็น</h2>
+    <div class="sub" id="reportSub">กำลังโหลด...</div>
+    <div class="divider"></div>
+  </div>
+  <div id="loading">กำลังโหลดรายชื่อ...</div>
+  <div id="error">⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</div>
+  <div id="list"></div>
+</div>
+
+<div class="scroll-date" id="scrollDate"></div>
+
+<script>
+const FS_BASE = 'https://firestore.googleapis.com/v1/projects/maekhong-waterfall-51445/databases/(default)/documents';
+const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const DAYS_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+
+function fmtDate(str) {
+  if (!str || str==='-') return '-';
+  const [y,m,d] = str.split('-');
+  if (!y||!m||!d) return str;
+  return `${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543}`;
+}
+
+function decodeField(f) {
+  if (!f) return null;
+  if ('stringValue' in f) return f.stringValue;
+  if ('booleanValue' in f) return f.booleanValue;
+  if ('integerValue' in f) return parseInt(f.integerValue);
+  if ('doubleValue' in f) return parseFloat(f.doubleValue);
+  if ('mapValue' in f) {
+    const out = {};
+    for (const [k,v] of Object.entries(f.mapValue.fields||{})) out[k] = decodeField(v);
+    return out;
+  }
+  return null;
+}
+
+// 0=จอย 1=เหมารถยนต์ 2=เหมา 3=มอไซค์ชุมชน 4=รถยนต์ส่วนตัว 5=มอไซค์ส่วนตัว 6=อื่นๆ
+function vehicleRank(v) {
+  if (!v) return 6;
+  if (v.includes('จอย')) return 0;
+  if (v.includes('เหมารถยนต์')) return 1;
+  if (v.includes('เหมา')) return 2;
+  if (v.includes('รับส่งจากชุมชน')) return 3;
+  if (v.includes('รถยนต์ส่วนตัว')) return 4;
+  if (v.includes('มอเตอร์ไซค์ส่วนตัว')) return 5;
+  return 6;
+}
+function vehicleClass(v) {
+  const r = vehicleRank(v);
+  if (r === 0) return 'veh-0';
+  if (r === 1 || r === 2) return 'veh-1';
+  if (r === 3) return 'veh-2';
+  return '';
+}
+
+function parseDoc(doc) {
+  const f = doc.fields || {};
+  return {
+    fullName:    decodeField(f.fullName)    || '-',
+    bookingId:   decodeField(f.bookingId)   || '-',
+    phone:       decodeField(f.phone)        || '-',
+    arrivalDate: decodeField(f.arrivalDate)  || '',
+    visitDate:   decodeField(f.visitDate)    || '',
+    vehicle:     decodeField(f.vehicle)      || '',
+    wantCave:    decodeField(f.wantCave)     || false,
+    caveDate:    decodeField(f.caveDate)     || '',
+    tickets:     decodeField(f.tickets)      || {},
+  };
+}
+
+async function fetchAllDocs() {
+  const docs = [];
+  let pageToken = null;
+  do {
+    const url = `${FS_BASE}/public_report?pageSize=300${pageToken ? '&pageToken='+pageToken : ''}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    (data.documents || []).forEach(doc => docs.push(parseDoc(doc)));
+    pageToken = data.nextPageToken || null;
+  } while (pageToken);
+  return docs;
+}
+
+async function loadData() {
+  try {
+    const docs = await fetchAllDocs();
+
+    // กรองเฉพาะตั้งแต่ 2 วันก่อนวันนี้เป็นต้นไป
+    const cutoff = new Date(); cutoff.setHours(0,0,0,0); cutoff.setDate(cutoff.getDate()-2);
+    const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
+    const filtered = docs.filter(d => (d.visitDate || d.arrivalDate || '') >= cutoffStr);
+
+    filtered.sort((a,b) => {
+      const ad = (a.arrivalDate||a.visitDate||'').localeCompare(b.arrivalDate||b.visitDate||'');
+      if (ad !== 0) return ad;
+      return vehicleRank(a.vehicle) - vehicleRank(b.vehicle);
+    });
+
+    const byDate = {};
+    filtered.forEach(d => {
+      const key = d.arrivalDate || d.visitDate || '';
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(d);
+    });
+
+    let totalPeople = 0;
+    filtered.forEach(d => {
+      const wf = d.tickets?.waterfall || {};
+      totalPeople += (wf.local||0)+(wf.thai||0)+(wf.foreign||0)+(wf.child||0);
+    });
+
+    const monthsInData = [...new Set(filtered.map(d => {
+      const date = d.arrivalDate || d.visitDate || '';
+      return date ? date.slice(0,7) : '';
+    }).filter(Boolean))].sort();
+    const monthLabel = monthsInData.length === 1
+      ? (() => { const [y,m] = monthsInData[0].split('-'); return `เดือน${MONTHS_FULL[parseInt(m)-1]} ${parseInt(y)+543}`; })()
+      : '';
+
+    document.getElementById('reportTitle').textContent = `รายชื่อผู้เข้าชมน้ำตกห้วยน้ำเย็น${monthLabel ? ' '+monthLabel : ''}`;
+    document.getElementById('reportSub').textContent = `จำนวนรายการ ${filtered.length} รายการ · รวม ${totalPeople} คน`;
+    document.getElementById('loading').style.display = 'none';
+
+    const sortedDates = Object.keys(byDate).sort();
+    const listEl = document.getElementById('list');
+    sortedDates.forEach(date => {
+      const [y,m,d] = date.split('-');
+      const dow = DAYS_TH[new Date(date+'T00:00:00').getDay()];
+      const dayLabel = `วันที่เดินทาง ${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543} (วัน${dow})`;
+
+      const section = document.createElement('div');
+      section.className = 'day-section';
+      section.dataset.date = `${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]}`;
+
+      let html = `<div class="day-title">${dayLabel}</div>`;
+      byDate[date].forEach((x, idx) => {
+        const wf = x.tickets?.waterfall || {};
+        const cv = x.tickets?.cave || {};
+        const wfLocal=wf.local||0, wfThai=wf.thai||0, wfFor=wf.foreign||0, wfCh=wf.child||0;
+        const cvThai=cv.thai||0, cvFor=cv.foreign||0, cvCh=cv.child||0;
+        const caveTotal = cvThai+cvFor+cvCh;
+
+        let wfStr = `นอกพื้นที่ ${wfThai}`;
+        if (wfFor>0) wfStr += ` · ต่างชาติ ${wfFor}`;
+        if (wfCh>0)  wfStr += ` · เด็ก ${wfCh}`;
+        if (wfLocal>0) wfStr += ` · พื้นที่ ${wfLocal}`;
+
+        let caveStr = (x.wantCave && caveTotal>0)
+          ? `คนไทย ${cvThai}`+(cvFor>0?` · ต่างชาติ ${cvFor}`:'')+( cvCh>0?` · เด็ก ${cvCh}`:'')
+          : '-';
+
+        const veh = (x.vehicle||'-').replace(/ \(.*?\)/g,'');
+        const vc = vehicleClass(x.vehicle);
+
+        html += `<div class="entry ${vc}">
+          <div class="entry-top">
+            <div class="entry-num">${idx+1}.</div>
+            <div class="entry-body">
+              <div class="entry-name">${x.fullName}</div>
+              <div class="entry-bid">${x.bookingId}</div>
+              <div class="entry-tickets">น้ำตก ${wfStr} &nbsp;|&nbsp; ถ้ำ ${caveStr}</div>
+              <div class="entry-meta">
+                <span>เดินทาง <strong>${fmtDate(x.arrivalDate)}</strong></span>
+                <span>เข้าชมน้ำตก <strong>${fmtDate(x.visitDate)}</strong></span>
+                ${x.wantCave && x.caveDate ? `<span>เข้าชมถ้ำ <strong>${fmtDate(x.caveDate)}</strong></span>` : ''}
+                <span>${veh}</span>
+                <span>${x.phone}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      });
+      section.innerHTML = html;
+      listEl.appendChild(section);
+    });
+
+    if (!sortedDates.length) {
+      listEl.innerHTML = '<div style="text-align:center;padding:40px;color:#888;">ยังไม่มีรายชื่อที่อนุมัติแล้ว</div>';
+    }
+
+    // Floating date badge on scroll
+    const scrollDateEl = document.getElementById('scrollDate');
+    let scrollTimer;
+    window.addEventListener('scroll', () => {
+      const sections = document.querySelectorAll('.day-section');
+      let current = '';
+      sections.forEach(s => {
+        if (s.getBoundingClientRect().top < 80) current = s.dataset.date;
+      });
+      if (current) {
+        scrollDateEl.textContent = current;
+        scrollDateEl.classList.add('show');
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => scrollDateEl.classList.remove('show'), 1500);
+      }
+    });
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
