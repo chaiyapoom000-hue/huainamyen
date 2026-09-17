@@ -202,15 +202,14 @@ async function loadData() {
 
     const sortedDates = Object.keys(byDate).sort();
     const listEl = document.getElementById('list');
-    sortedDates.forEach(date => {
+
+    function buildSection(date) {
       const [y,m,d] = date.split('-');
       const dow = DAYS_TH[new Date(date+'T00:00:00').getDay()];
       const dayLabel = `วันที่เดินทาง ${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]} ${parseInt(y)+543} (วัน${dow})`;
-
       const section = document.createElement('div');
       section.className = 'day-section';
       section.dataset.date = `${parseInt(d)} ${MONTHS_TH[parseInt(m)-1]}`;
-
       let html = `<div class="day-title">${dayLabel}</div>`;
       byDate[date].forEach((x, idx) => {
         const wf = x.tickets?.waterfall || {};
@@ -218,19 +217,15 @@ async function loadData() {
         const wfLocal=wf.local||0, wfThai=wf.thai||0, wfFor=wf.foreign||0, wfCh=wf.child||0;
         const cvThai=cv.thai||0, cvFor=cv.foreign||0, cvCh=cv.child||0;
         const caveTotal = cvThai+cvFor+cvCh;
-
         let wfStr = `นอกพื้นที่ ${wfThai}`;
         if (wfFor>0) wfStr += ` · ต่างชาติ ${wfFor}`;
         if (wfCh>0)  wfStr += ` · เด็ก ${wfCh}`;
         if (wfLocal>0) wfStr += ` · พื้นที่ ${wfLocal}`;
-
-        let caveStr = (x.wantCave && caveTotal>0)
+        const caveStr = (x.wantCave && caveTotal>0)
           ? `คนไทย ${cvThai}`+(cvFor>0?` · ต่างชาติ ${cvFor}`:'')+( cvCh>0?` · เด็ก ${cvCh}`:'')
           : '-';
-
         const veh = (x.vehicle||'-').replace(/ \(.*?\)/g,'');
         const vc = vehicleClass(x.vehicle);
-
         html += `<div class="entry ${vc}">
           <div class="entry-top">
             <div class="entry-num">${idx+1}.</div>
@@ -250,11 +245,25 @@ async function loadData() {
         </div>`;
       });
       section.innerHTML = html;
-      listEl.appendChild(section);
-    });
+      return section;
+    }
 
     if (!sortedDates.length) {
       listEl.innerHTML = '<div style="text-align:center;padding:40px;color:#888;">ยังไม่มีรายชื่อที่อนุมัติแล้ว</div>';
+    }
+
+    // แสดง 10 วันแรกทันที แล้วค่อยๆ render ส่วนที่เหลือ
+    const FIRST_BATCH = 10;
+    sortedDates.slice(0, FIRST_BATCH).forEach(date => listEl.appendChild(buildSection(date)));
+
+    if (sortedDates.length > FIRST_BATCH) {
+      let idx = FIRST_BATCH;
+      function renderNext() {
+        if (idx >= sortedDates.length) return;
+        listEl.appendChild(buildSection(sortedDates[idx++]));
+        setTimeout(renderNext, 30);
+      }
+      setTimeout(renderNext, 50);
     }
 
     // Floating date badge on scroll
