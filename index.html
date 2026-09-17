@@ -170,6 +170,104 @@
   @media (prefers-reduced-motion: reduce){
     .btn{ transition: none; }
   }
+
+  .date-picker-wrap{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .date-picker-label{
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--ink-cream);
+    letter-spacing: 0.04em;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+  .date-picker-input{
+    background: rgba(10,15,8,0.65);
+    border: 1.5px solid rgba(246,242,228,0.7);
+    color: #f6f2e4;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    padding: 12px 20px;
+    border-radius: var(--radius-pill);
+    outline: none;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    width: 220px;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .date-picker-input:focus{
+    border-color: var(--accent);
+    background: rgba(10,15,8,0.8);
+  }
+  .date-picker-input::placeholder{ color: rgba(246,242,228,0.6); }
+
+  .quota-info{
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--ink-cream);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    background: rgba(10,15,8,0.7);
+    border-radius: 20px;
+    padding: 6px 16px;
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+  .quota-bar{
+    width: 80px; height: 5px;
+    background: rgba(246,242,228,0.2);
+    border-radius: 99px; overflow: hidden;
+  }
+  .quota-bar-fill{ height: 100%; border-radius: 99px; transition: width 0.4s; }
+
+  /* flatpickr calendar override */
+  .flatpickr-calendar{
+    background: #f6f2e4 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35) !important;
+    border: none !important;
+  }
+  .flatpickr-months, .flatpickr-month{
+    background: #1a2317 !important;
+    border-radius: 14px 14px 0 0 !important;
+    color: #f6f2e4 !important;
+  }
+  .flatpickr-current-month, .flatpickr-current-month select,
+  .flatpickr-current-month .cur-month{
+    color: #f6f2e4 !important;
+  }
+  /* ซ่อน dropdown เดือน */
+  .flatpickr-current-month .flatpickr-monthDropdown-months,
+  .flatpickr-current-month select.cur-month{
+    display: none !important;
+  }
+  .flatpickr-month-display{
+    color: #f6f2e4;
+    font-weight: 700;
+    font-size: 1em;
+    padding: 0 4px;
+  }
+  /* ซ่อนวันของเดือนก่อน/หลัง */
+  .flatpickr-day.nextMonthDay,
+  .flatpickr-day.prevMonthDay{
+    visibility: hidden !important;
+  }
+  .flatpickr-prev-month svg, .flatpickr-next-month svg{ fill: #f6f2e4 !important; }
+  .flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg{ fill: var(--accent) !important; }
+  .flatpickr-weekdays{ background: #1a2317 !important; }
+  span.flatpickr-weekday{ background: #1a2317 !important; color: #d3a445 !important; font-weight:700; }
+  .flatpickr-day{ color: #1a2317 !important; border-radius: 8px !important; }
+  .flatpickr-day:hover{ background: #d3a445 !important; border-color: #d3a445 !important; color: #fff !important; }
+  .flatpickr-day.selected{ background: #1a2317 !important; border-color: #1a2317 !important; color: #f6f2e4 !important; }
+  .flatpickr-day.flatpickr-disabled{ color: #bbb !important; }
+  .flatpickr-day.today{ border-color: #d3a445 !important; }
 </style>
 
 <section class="hero">
@@ -182,8 +280,108 @@
     <h1>น้ำตกห้วยน้ำเย็น</h1>
     <p class="lede">ลงทะเบียนจองการเข้าชม</p>
     <p class="desc">สัมผัสธรรมชาติที่แท้จริง จำกัดผู้เข้าชมออนไลน์เพียง 150 ท่านต่อวัน เพื่อรักษาสมดุลของระบบนิเวศ</p>
+    <div class="date-picker-wrap">
+      <span class="date-picker-label">เลือกวันที่ต้องการเข้าชม</span>
+      <input type="text" id="visitDatePicker" class="date-picker-input" placeholder="เลือกวันที่" readonly>
+      <div class="quota-info" id="quotaInfo">
+        <span id="quotaText"></span>
+        <div class="quota-bar"><div class="quota-bar-fill" id="quotaFill"></div></div>
+      </div>
+    </div>
     <div class="cta-row">
-      <a href="reserve-hny-ticket.html" class="btn btn-primary">จองเข้าชม</a>
+      <a id="bookingBtn" href="reserve-hny-ticket.html" class="btn btn-primary">จองเข้าชม</a>
     </div>
   </div>
 </section>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+<script>
+  const btn = document.getElementById('bookingBtn');
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() + 3);
+  const MONTHS_TH_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  function injectMonthLabel(fp) {
+    const header = fp.calendarContainer.querySelector('.flatpickr-current-month');
+    if (!header) return;
+    let lbl = header.querySelector('.flatpickr-month-display');
+    if (!lbl) {
+      lbl = document.createElement('span');
+      lbl.className = 'flatpickr-month-display';
+      header.prepend(lbl);
+    }
+    lbl.textContent = MONTHS_TH_FULL[fp.currentMonth];
+  }
+  flatpickr('#visitDatePicker', {
+    dateFormat: 'Y-m-d',
+    altInput: true,
+    altFormat: 'j F Y',
+    minDate: minDate,
+    maxDate: '2026-10-31',
+    locale: 'th',
+    disable: [function(date) {
+      if (date.toISOString().slice(0,10) === '2026-07-29') return false;
+      return date.getDay() === 3;
+    }],
+    onReady: function(_, __, fp) { injectMonthLabel(fp); },
+    onMonthChange: function(_, __, fp) { injectMonthLabel(fp); },
+    onChange: function(selectedDates, dateStr) {
+      btn.href = dateStr ? `reserve-hny-ticket.html?date=${dateStr}` : 'reserve-hny-ticket.html';
+      if (dateStr) loadQuota(dateStr);
+    }
+  });
+
+  const QUOTA = 150;
+  const FS = 'https://firestore.googleapis.com/v1/projects/maekhong-waterfall-51445/databases/(default)/documents';
+
+  async function checkSystemStatus() {
+    try {
+      const res = await fetch(`${FS}/settings/system`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const enabled = data.fields?.enabled?.booleanValue !== false;
+      if (!enabled) {
+        document.getElementById('visitDatePicker').disabled = true;
+        document.getElementById('visitDatePicker').placeholder = 'ระบบกำลังปรับปรุง';
+        document.getElementById('visitDatePicker').style.opacity = '0.45';
+        document.getElementById('visitDatePicker').style.cursor = 'not-allowed';
+        const bookingBtn = document.getElementById('bookingBtn');
+        bookingBtn.style.opacity = '0.45';
+        bookingBtn.style.pointerEvents = 'none';
+        bookingBtn.style.cursor = 'not-allowed';
+        bookingBtn.textContent = 'ระบบกำลังปรับปรุง';
+        bookingBtn.removeAttribute('href');
+      }
+    } catch(e) {}
+  }
+  checkSystemStatus();
+  async function loadQuota(date) {
+    const infoEl = document.getElementById('quotaInfo');
+    const textEl = document.getElementById('quotaText');
+    const fillEl = document.getElementById('quotaFill');
+    textEl.textContent = 'กำลังตรวจสอบ...';
+    infoEl.style.display = 'flex';
+    try {
+      const res = await fetch(`${FS}/daily_quota/${date}`);
+      let used = 0;
+      if (res.ok) {
+        const data = await res.json();
+        used = parseInt(data.fields?.count?.integerValue || 0);
+      }
+      const remaining = QUOTA - used;
+      const pct = Math.min((used / QUOTA) * 100, 100);
+      const color = remaining <= 0 ? '#e74c3c' : remaining <= 30 ? '#e67e22' : '#67A792';
+      fillEl.style.width = pct + '%';
+      fillEl.style.background = color;
+      if (remaining <= 0) {
+        textEl.textContent = 'คิวออนไลน์เต็มแล้ว';
+        infoEl.style.borderLeft = '3px solid #e74c3c';
+      } else {
+        textEl.textContent = `มีคนจอง ${used} คน · ว่างอีก ${remaining} ท่าน`;
+        infoEl.style.borderLeft = `3px solid ${color}`;
+      }
+    } catch(e) {
+      textEl.textContent = 'ตรวจสอบไม่ได้';
+    }
+  }
+</script>
