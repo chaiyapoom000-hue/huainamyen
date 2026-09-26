@@ -290,7 +290,7 @@
       </div>
     </div>
     <div class="cta-row">
-      <a id="bookingBtn" href="reserve-hny-ticket.html" class="btn btn-primary">จองเข้าชม</a>
+      <a id="bookingBtn" href="info-before-booking.html" class="btn btn-primary">จองเข้าชม</a>
     </div>
   </div>
 </section>
@@ -327,7 +327,7 @@
     onReady: function(_, __, fp) { injectMonthLabel(fp); },
     onMonthChange: function(_, __, fp) { injectMonthLabel(fp); },
     onChange: function(selectedDates, dateStr) {
-      btn.href = dateStr ? `reserve-hny-ticket.html?date=${dateStr}` : 'reserve-hny-ticket.html';
+      btn.href = dateStr ? `info-before-booking.html?date=${dateStr}` : 'info-before-booking.html';
       if (dateStr) loadQuota(dateStr);
     }
   });
